@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/urandom/drawgl"
-	"github.com/urandom/drawgl/operation/common"
+	"github.com/urandom/drawgl/operation/io"
 )
 
 func main() {
@@ -14,8 +14,8 @@ func main() {
 		return
 	}
 
-	load := common.NewLoadLinker(common.LoadOptions{Path: os.Args[1]})
-	save := common.NewSaveLinker(common.SaveOptions{Path: "/tmp/out.png"})
+	load := io.NewLoadLinker(io.LoadOptions{Path: os.Args[1]})
+	save := io.NewSaveLinker(io.SaveOptions{Path: "/tmp/out.png"})
 
 	load.Link(save)
 
