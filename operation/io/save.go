@@ -16,6 +16,11 @@ import (
 	"image/png"
 )
 
+const (
+	OutputPath   = "output-path"
+	OutputFormat = "output-format"
+)
+
 type Save struct {
 	base.Node
 	opts SaveOptions
@@ -75,6 +80,8 @@ func (n Save) Process(wd graph.WalkData, buffers map[graph.ConnectorName]drawgl.
 	if w == nil {
 		err = fmt.Errorf("nowhere to save the image")
 	} else {
+		res.Meta[OutputFormat] = kind
+		res.Meta[OutputPath] = n.opts.Path
 		switch kind {
 		case "jpeg":
 			jpeg.Encode(w, r.Buffer, n.opts.JpegOptions)

@@ -21,8 +21,10 @@ func main() {
 
 	load := io.NewLoadLinker(io.LoadOptions{Path: os.Args[1]})
 	save := io.NewSaveLinker(io.SaveOptions{Path: out})
+	exif := io.NewCopyExifLinker(io.CopyExifOptions{})
 
 	load.Link(save)
+	save.Link(exif)
 
 	graph := drawgl.Graph{}
 	err := graph.Process(load)

@@ -16,6 +16,11 @@ import (
 	_ "image/png"
 )
 
+const (
+	InputPath   = "input-path"
+	InputFormat = "input-format"
+)
+
 type Load struct {
 	base.Node
 	opts LoadOptions
@@ -53,8 +58,10 @@ func (n Load) Process(wd graph.WalkData, buffers map[graph.ConnectorName]drawgl.
 
 	}
 
+	res.Meta = drawgl.Meta{InputPath: n.opts.Path}
+
 	var img image.Image
-	img, _, err = image.Decode(reader)
+	img, res.Meta[InputFormat], err = image.Decode(reader)
 
 	if err == nil {
 		if d, ok := img.(draw.Image); ok {
