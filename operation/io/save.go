@@ -10,7 +10,6 @@ import (
 	"github.com/urandom/drawgl"
 	"github.com/urandom/graph"
 	"github.com/urandom/graph/base"
-	"golang.org/x/image/draw"
 
 	"image/gif"
 	"image/jpeg"
@@ -34,7 +33,7 @@ func NewSaveLinker(opts SaveOptions) graph.Linker {
 	return base.NewLinkerNode(Save{Node: base.NewNode(), opts: opts})
 }
 
-func (n Save) Process(wd graph.WalkData, buffers map[graph.ConnectorName]draw.Image, output chan<- drawgl.Result) {
+func (n Save) Process(wd graph.WalkData, buffers map[graph.ConnectorName]drawgl.Result, output chan<- drawgl.Result) {
 	var err error
 	res := drawgl.Result{Id: n.Id()}
 
@@ -47,8 +46,9 @@ func (n Save) Process(wd graph.WalkData, buffers map[graph.ConnectorName]draw.Im
 		wd.Close()
 	}()
 
-	buf := buffers[graph.InputName]
-	if buf == nil {
+	r := buffers[graph.InputName]
+	res.Meta = r.Meta
+	if r.Buffer == nil {
 		err = fmt.Errorf("no input buffer")
 		return
 	}
@@ -77,11 +77,11 @@ func (n Save) Process(wd graph.WalkData, buffers map[graph.ConnectorName]draw.Im
 	} else {
 		switch kind {
 		case "jpeg":
-			jpeg.Encode(w, buf, n.opts.JpegOptions)
+			jpeg.Encode(w, r.Buffer, n.opts.JpegOptions)
 		case "png":
-			png.Encode(w, buf)
+			png.Encode(w, r.Buffer)
 		case "gif":
-			gif.Encode(w, buf, n.opts.GifOptions)
+			gif.Encode(w, r.Buffer, n.opts.GifOptions)
 		default:
 			err = fmt.Errorf("unknown format %s", kind)
 		}

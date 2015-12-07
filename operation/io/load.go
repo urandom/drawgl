@@ -30,7 +30,7 @@ func NewLoadLinker(opts LoadOptions) graph.Linker {
 	return base.NewLinkerNode(Load{Node: base.NewNode(), opts: opts})
 }
 
-func (n Load) Process(wd graph.WalkData, buffers map[graph.ConnectorName]draw.Image, output chan<- drawgl.Result) {
+func (n Load) Process(wd graph.WalkData, buffers map[graph.ConnectorName]drawgl.Result, output chan<- drawgl.Result) {
 	var err error
 	res := drawgl.Result{Id: n.Id()}
 

@@ -14,8 +14,13 @@ func main() {
 		return
 	}
 
+	out := "/tmp/out.png"
+	if len(os.Args) > 2 {
+		out = os.Args[2]
+	}
+
 	load := io.NewLoadLinker(io.LoadOptions{Path: os.Args[1]})
-	save := io.NewSaveLinker(io.SaveOptions{Path: "/tmp/out.png"})
+	save := io.NewSaveLinker(io.SaveOptions{Path: out})
 
 	load.Link(save)
 
@@ -23,7 +28,7 @@ func main() {
 	err := graph.Process(load)
 
 	if err == nil {
-		fmt.Println("Converted image saved to '/tmp/out.png'")
+		fmt.Printf("Converted image saved to '%s'\n", out)
 	} else {
 		fmt.Fprintf(os.Stderr, "Error convertig image %s: %v\n", os.Args[1], err)
 	}

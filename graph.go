@@ -14,34 +14,38 @@ type Graph struct {
 type Result struct {
 	Id     graph.Id
 	Buffer draw.Image
+	Meta   Meta
 	Error  error
 }
 
 type Processor interface {
-	Process(wd graph.WalkData, buffers map[graph.ConnectorName]draw.Image, output chan<- Result)
+	Process(wd graph.WalkData, buffers map[graph.ConnectorName]Result, output chan<- Result)
 }
+
+type Meta map[string]interface{}
 
 func (g Graph) Process(start graph.Linker) error {
 	walker := graph.NewWalker(start)
 	data := walker.Walk()
 
 	output := make(chan Result)
-	resultSet := make(map[graph.Id]draw.Image)
+	resultSet := make(map[graph.Id]Result)
 
 	for {
 		select {
 		case wd, open := <-data:
 			if open {
 				if p, ok := wd.Node.(Processor); ok {
-					pb := make(map[graph.ConnectorName]draw.Image)
+					pb := make(map[graph.ConnectorName]Result)
 
 					for _, p := range wd.Parents {
-						buf := resultSet[p.Node.Id()]
-						if p.From != graph.OutputName && buf != nil {
+						r := resultSet[p.Node.Id()]
+						if p.From != graph.OutputName && r.Buffer != nil {
 							// If the image buffer comes from a secondary output, clone it
-							buf = copyImage(buf)
+							r.Buffer = copyImage(r.Buffer)
 						}
-						pb[p.To] = buf
+						r.Meta = copyMeta(r.Meta)
+						pb[p.To] = r
 					}
 
 					go p.Process(wd, pb, output)
@@ -55,7 +59,7 @@ func (g Graph) Process(start graph.Linker) error {
 			if r.Error != nil {
 				return fmt.Errorf("Error processing node %v: %v\n", r.Id, r.Error)
 			}
-			resultSet[r.Id] = r.Buffer
+			resultSet[r.Id] = r
 		}
 	}
 }
@@ -125,4 +129,16 @@ func copyImage(img draw.Image) draw.Image {
 	}
 
 	return img
+}
+
+func copyMeta(meta Meta) (cp Meta) {
+	cp = make(Meta)
+
+	if meta != nil {
+		for k, v := range meta {
+			cp[k] = v
+		}
+	}
+
+	return
 }
