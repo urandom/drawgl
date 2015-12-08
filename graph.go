@@ -11,6 +11,16 @@ import (
 type Graph struct {
 }
 
+type Channel int
+
+const (
+	All Channel = iota << 1
+	Red
+	Green
+	Blue
+	Alpha
+)
+
 type Result struct {
 	Id     graph.Id
 	Buffer draw.Image
@@ -67,61 +77,61 @@ func (g Graph) Process(start graph.Linker) error {
 func copyImage(img draw.Image) draw.Image {
 	switch i := img.(type) {
 	case *image.Alpha:
-		var cp *image.Alpha
+		cp := new(image.Alpha)
 		*cp = *i
 		copy(cp.Pix, i.Pix)
 
 		return cp
 	case *image.Alpha16:
-		var cp *image.Alpha16
+		cp := new(image.Alpha16)
 		*cp = *i
 		copy(cp.Pix, i.Pix)
 
 		return cp
 	case *image.CMYK:
-		var cp *image.CMYK
+		cp := new(image.CMYK)
 		*cp = *i
 		copy(cp.Pix, i.Pix)
 
 		return cp
 	case *image.Gray:
-		var cp *image.Gray
+		cp := new(image.Gray)
 		*cp = *i
 		copy(cp.Pix, i.Pix)
 
 		return cp
 	case *image.Gray16:
-		var cp *image.Gray16
+		cp := new(image.Gray16)
 		*cp = *i
 		copy(cp.Pix, i.Pix)
 
 		return cp
 	case *image.NRGBA:
-		var cp *image.NRGBA
+		cp := new(image.NRGBA)
 		*cp = *i
 		copy(cp.Pix, i.Pix)
 
 		return cp
 	case *image.NRGBA64:
-		var cp *image.NRGBA64
+		cp := new(image.NRGBA64)
 		*cp = *i
 		copy(cp.Pix, i.Pix)
 
 		return cp
 	case *image.Paletted:
-		var cp *image.Paletted
+		cp := new(image.Paletted)
 		*cp = *i
 		copy(cp.Pix, i.Pix)
 
 		return cp
 	case *image.RGBA:
-		var cp *image.RGBA
+		cp := new(image.RGBA)
 		*cp = *i
 		copy(cp.Pix, i.Pix)
 
 		return cp
 	case *image.RGBA64:
-		var cp *image.RGBA64
+		cp := new(image.RGBA64)
 		*cp = *i
 		copy(cp.Pix, i.Pix)
 
@@ -141,4 +151,22 @@ func copyMeta(meta Meta) (cp Meta) {
 	}
 
 	return
+}
+
+func ClampUint32(in float64) uint32 {
+	if in < 0 {
+		return 0
+	} else if in > 0xffffffff {
+		return 0xffffffff
+	}
+
+	return uint32(in)
+}
+
+func ClampUint16(in uint32) uint16 {
+	if in > 0xffff {
+		return 0xffff
+	}
+
+	return uint16(in)
 }
