@@ -51,7 +51,7 @@ func (g Graph) Process(start graph.Linker) error {
 						r := resultSet[p.Node.Id()]
 						if p.From != graph.OutputName && r.Buffer != nil {
 							// If the image buffer comes from a secondary output, clone it
-							r.Buffer = copyImage(r.Buffer)
+							r.Buffer = CopyImage(r.Buffer)
 						}
 						r.Meta = copyMeta(r.Meta)
 						pb[p.To] = r
@@ -73,9 +73,10 @@ func (g Graph) Process(start graph.Linker) error {
 	}
 }
 
-func copyImage(img *image.NRGBA64) *image.NRGBA64 {
+func CopyImage(img *image.NRGBA64) *image.NRGBA64 {
 	cp := new(image.NRGBA64)
 	*cp = *img
+	cp.Pix = make([]uint8, len(img.Pix))
 	copy(cp.Pix, img.Pix)
 
 	return cp
@@ -93,19 +94,11 @@ func copyMeta(meta Meta) (cp Meta) {
 	return
 }
 
-func ClampUint32(in float64) uint32 {
-	if in < 0 {
-		return 0
-	} else if in > 0xffffffff {
-		return 0xffffffff
-	}
-
-	return uint32(in)
-}
-
 func ClampUint16(in float64) uint16 {
 	if in > 0xffff {
 		return 0xffff
+	} else if in < 0 {
+		return 0
 	}
 
 	return uint16(in)

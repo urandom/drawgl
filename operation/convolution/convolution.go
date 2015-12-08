@@ -69,6 +69,7 @@ func (n Convolution) Process(wd graph.WalkData, buffers map[graph.ConnectorName]
 		weights = n.opts.Kernel.Weights()
 	}
 
+	src := drawgl.CopyImage(buf)
 	b := buf.Bounds()
 	l := len(weights)
 	size := int(math.Sqrt(float64(l)))
@@ -100,7 +101,7 @@ func (n Convolution) Process(wd graph.WalkData, buffers map[graph.ConnectorName]
 						my = (b.Max.Y-1)*2 - my
 					}
 
-					c := buf.NRGBA64At(mx, my)
+					c := src.NRGBA64At(mx, my)
 
 					if n.opts.Channel&drawgl.Red > 0 {
 						rsum += coeff * float64(c.R)
@@ -117,7 +118,7 @@ func (n Convolution) Process(wd graph.WalkData, buffers map[graph.ConnectorName]
 				}
 			}
 
-			c := buf.NRGBA64At(x, y)
+			c := src.NRGBA64At(x, y)
 
 			if n.opts.Channel&drawgl.Red > 0 {
 				c.R = drawgl.ClampUint16(rsum + offset)
@@ -132,7 +133,7 @@ func (n Convolution) Process(wd graph.WalkData, buffers map[graph.ConnectorName]
 				c.A = drawgl.ClampUint16(asum + offset)
 			}
 
-			buf.Set(x, y, c)
+			buf.SetNRGBA64(x, y, c)
 		}
 	}
 
