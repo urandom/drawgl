@@ -5,7 +5,6 @@ import (
 	"image"
 
 	"github.com/urandom/graph"
-	"golang.org/x/image/draw"
 )
 
 type Graph struct {
@@ -23,7 +22,7 @@ const (
 
 type Result struct {
 	Id     graph.Id
-	Buffer draw.Image
+	Buffer *image.RGBA64
 	Meta   Meta
 	Error  error
 }
@@ -74,71 +73,12 @@ func (g Graph) Process(start graph.Linker) error {
 	}
 }
 
-func copyImage(img draw.Image) draw.Image {
-	switch i := img.(type) {
-	case *image.Alpha:
-		cp := new(image.Alpha)
-		*cp = *i
-		copy(cp.Pix, i.Pix)
+func copyImage(img *image.RGBA64) *image.RGBA64 {
+	cp := new(image.RGBA64)
+	*cp = *img
+	copy(cp.Pix, img.Pix)
 
-		return cp
-	case *image.Alpha16:
-		cp := new(image.Alpha16)
-		*cp = *i
-		copy(cp.Pix, i.Pix)
-
-		return cp
-	case *image.CMYK:
-		cp := new(image.CMYK)
-		*cp = *i
-		copy(cp.Pix, i.Pix)
-
-		return cp
-	case *image.Gray:
-		cp := new(image.Gray)
-		*cp = *i
-		copy(cp.Pix, i.Pix)
-
-		return cp
-	case *image.Gray16:
-		cp := new(image.Gray16)
-		*cp = *i
-		copy(cp.Pix, i.Pix)
-
-		return cp
-	case *image.NRGBA:
-		cp := new(image.NRGBA)
-		*cp = *i
-		copy(cp.Pix, i.Pix)
-
-		return cp
-	case *image.NRGBA64:
-		cp := new(image.NRGBA64)
-		*cp = *i
-		copy(cp.Pix, i.Pix)
-
-		return cp
-	case *image.Paletted:
-		cp := new(image.Paletted)
-		*cp = *i
-		copy(cp.Pix, i.Pix)
-
-		return cp
-	case *image.RGBA:
-		cp := new(image.RGBA)
-		*cp = *i
-		copy(cp.Pix, i.Pix)
-
-		return cp
-	case *image.RGBA64:
-		cp := new(image.RGBA64)
-		*cp = *i
-		copy(cp.Pix, i.Pix)
-
-		return cp
-	}
-
-	return img
+	return cp
 }
 
 func copyMeta(meta Meta) (cp Meta) {

@@ -100,8 +100,7 @@ func (n Convolution) Process(wd graph.WalkData, buffers map[graph.ConnectorName]
 						my = (b.Max.Y-1)*2 - my
 					}
 
-					r, g, b, a := color.RGBA64Model.Convert(
-						buf.At(mx, my)).RGBA()
+					r, g, b, a := buf.At(mx, my).RGBA()
 
 					if n.opts.Channel&drawgl.Red > 0 {
 						rsum += coeff * float64(r)
@@ -118,7 +117,7 @@ func (n Convolution) Process(wd graph.WalkData, buffers map[graph.ConnectorName]
 				}
 			}
 
-			r, g, b, a := color.RGBA64Model.Convert(buf.At(x, y)).RGBA()
+			r, g, b, a := buf.At(x, y).RGBA()
 
 			if n.opts.Channel&drawgl.Red > 0 {
 				r = drawgl.ClampUint32(rsum + offset)
