@@ -1,6 +1,7 @@
 package io
 
 import (
+	"errors"
 	"fmt"
 	"image"
 	"io"
@@ -31,8 +32,11 @@ type LoadOptions struct {
 	Path   string
 }
 
-func NewLoadLinker(opts LoadOptions) graph.Linker {
-	return base.NewLinkerNode(Load{Node: base.NewNode(), opts: opts})
+func NewLoadLinker(opts LoadOptions) (graph.Linker, error) {
+	if opts.Reader == nil && opts.Path == "" {
+		return nil, errors.New("No input")
+	}
+	return base.NewLinkerNode(Load{Node: base.NewNode(), opts: opts}), nil
 }
 
 func (n Load) Process(wd graph.WalkData, buffers map[graph.ConnectorName]drawgl.Result, output chan<- drawgl.Result) {

@@ -1,6 +1,7 @@
 package io
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"mime"
@@ -34,8 +35,11 @@ type SaveOptions struct {
 	GifOptions  *gif.Options
 }
 
-func NewSaveLinker(opts SaveOptions) graph.Linker {
-	return base.NewLinkerNode(Save{Node: base.NewNode(), opts: opts})
+func NewSaveLinker(opts SaveOptions) (graph.Linker, error) {
+	if opts.Writer == nil && opts.Path == "" {
+		return nil, errors.New("No output")
+	}
+	return base.NewLinkerNode(Save{Node: base.NewNode(), opts: opts}), nil
 }
 
 func (n Save) Process(wd graph.WalkData, buffers map[graph.ConnectorName]drawgl.Result, output chan<- drawgl.Result) {
