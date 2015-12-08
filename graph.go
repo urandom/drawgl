@@ -22,7 +22,7 @@ const (
 
 type Result struct {
 	Id     graph.Id
-	Buffer *image.RGBA64
+	Buffer *image.NRGBA64
 	Meta   Meta
 	Error  error
 }
@@ -73,8 +73,8 @@ func (g Graph) Process(start graph.Linker) error {
 	}
 }
 
-func copyImage(img *image.RGBA64) *image.RGBA64 {
-	cp := new(image.RGBA64)
+func copyImage(img *image.NRGBA64) *image.NRGBA64 {
+	cp := new(image.NRGBA64)
 	*cp = *img
 	copy(cp.Pix, img.Pix)
 
@@ -103,7 +103,7 @@ func ClampUint32(in float64) uint32 {
 	return uint32(in)
 }
 
-func ClampUint16(in uint32) uint16 {
+func ClampUint16(in float64) uint16 {
 	if in > 0xffff {
 		return 0xffff
 	}

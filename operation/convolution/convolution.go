@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"image"
-	"image/color"
 	"math"
 
 	"github.com/urandom/drawgl"
@@ -75,6 +74,7 @@ func (n Convolution) Process(wd graph.WalkData, buffers map[graph.ConnectorName]
 	size := int(math.Sqrt(float64(l)))
 	half := int(size / 2)
 
+	opaque := buf.Opaque()
 	for y := b.Min.Y; y < b.Max.Y; y++ {
 		for x := b.Min.X; x < b.Max.X; x++ {
 			if hasRegion && !image.Pt(x, y).In(n.opts.Region) {
@@ -100,43 +100,36 @@ func (n Convolution) Process(wd graph.WalkData, buffers map[graph.ConnectorName]
 						my = (b.Max.Y-1)*2 - my
 					}
 
-					r, g, b, a := buf.At(mx, my).RGBA()
+					c := buf.NRGBA64At(mx, my)
 
 					if n.opts.Channel&drawgl.Red > 0 {
-						rsum += coeff * float64(r)
+						rsum += coeff * float64(c.R)
 					}
 					if n.opts.Channel&drawgl.Green > 0 {
-						gsum += coeff * float64(g)
+						gsum += coeff * float64(c.G)
 					}
 					if n.opts.Channel&drawgl.Blue > 0 {
-						bsum += coeff * float64(b)
+						bsum += coeff * float64(c.B)
 					}
-					if n.opts.Channel&drawgl.Alpha > 0 {
-						asum += coeff * float64(a)
+					if !opaque && n.opts.Channel&drawgl.Alpha > 0 {
+						asum += coeff * float64(c.A)
 					}
 				}
 			}
 
-			r, g, b, a := buf.At(x, y).RGBA()
+			c := buf.NRGBA64At(x, y)
 
 			if n.opts.Channel&drawgl.Red > 0 {
-				r = drawgl.ClampUint32(rsum + offset)
+				c.R = drawgl.ClampUint16(rsum + offset)
 			}
 			if n.opts.Channel&drawgl.Green > 0 {
-				g = drawgl.ClampUint32(gsum + offset)
+				c.G = drawgl.ClampUint16(gsum + offset)
 			}
 			if n.opts.Channel&drawgl.Blue > 0 {
-				b = drawgl.ClampUint32(bsum + offset)
+				c.B = drawgl.ClampUint16(bsum + offset)
 			}
-			if n.opts.Channel&drawgl.Alpha > 0 {
-				a = drawgl.ClampUint32(asum + offset)
-			}
-
-			c := color.RGBA64{
-				drawgl.ClampUint16(r),
-				drawgl.ClampUint16(g),
-				drawgl.ClampUint16(b),
-				drawgl.ClampUint16(a),
+			if !opaque && n.opts.Channel&drawgl.Alpha > 0 {
+				c.A = drawgl.ClampUint16(asum + offset)
 			}
 
 			buf.Set(x, y, c)
