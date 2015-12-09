@@ -21,6 +21,8 @@ type ConvolutionOptions struct {
 	Channel   drawgl.Channel
 	Normalize bool
 	Region    image.Rectangle
+	Alpha     bool
+	Linear    bool
 }
 
 func NewConvolutionLinker(opts ConvolutionOptions) (graph.Linker, error) {
@@ -73,8 +75,14 @@ func (n Convolution) Process(wd graph.WalkData, buffers map[graph.ConnectorName]
 	size := int(math.Sqrt(float64(l)))
 	half := int(size / 2)
 
-	opaque := buf.Opaque()
-	drawgl.ParallelRectangleIterator(b).Iterate(func(pt image.Point) {
+	var it drawgl.RectangleIterator
+	if n.opts.Linear {
+		it = drawgl.LinearRectangleIterator(b)
+	} else {
+		it = drawgl.ParallelRectangleIterator(b)
+	}
+
+	it.Iterate(func(pt image.Point) {
 		if hasRegion && !pt.In(n.opts.Region) {
 			return
 		}
@@ -109,7 +117,7 @@ func (n Convolution) Process(wd graph.WalkData, buffers map[graph.ConnectorName]
 				if n.opts.Channel&drawgl.Blue > 0 {
 					bsum += coeff * float64(c.B)
 				}
-				if !opaque && n.opts.Channel&drawgl.Alpha > 0 {
+				if n.opts.Alpha && n.opts.Channel&drawgl.Alpha > 0 {
 					asum += coeff * float64(c.A)
 				}
 			}
@@ -126,7 +134,7 @@ func (n Convolution) Process(wd graph.WalkData, buffers map[graph.ConnectorName]
 		if n.opts.Channel&drawgl.Blue > 0 {
 			c.B = drawgl.ClampUint16(bsum + offset)
 		}
-		if !opaque && n.opts.Channel&drawgl.Alpha > 0 {
+		if n.opts.Alpha && n.opts.Channel&drawgl.Alpha > 0 {
 			c.A = drawgl.ClampUint16(asum + offset)
 		}
 
