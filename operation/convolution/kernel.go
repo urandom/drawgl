@@ -10,10 +10,15 @@ type Kernel interface {
 	Normalized() ([]float64, float64)
 }
 
-type kernel []float64
+type HVKernel interface {
+	HWeights() []float64
+	VWeights() []float64
+}
 
-func (k kernel) Weights() []float64 {
-	return k
+type kernel []float64
+type hvkernel struct {
+	h []float64
+	v []float64
 }
 
 func NewKernel(data []float64) (k Kernel, err error) {
@@ -28,8 +33,34 @@ func NewKernel(data []float64) (k Kernel, err error) {
 	return
 }
 
+func (k kernel) Weights() []float64 {
+	return k
+}
+
 func (k kernel) Normalized() ([]float64, float64) {
 	return NormalizeData(k)
+}
+
+func NewHVKernel(h, v []float64) (k HVKernel, err error) {
+	if len(h)%2 == 0 {
+		err = errors.New("Horizontal kernel has to be odd")
+		return
+	}
+	if len(v)%2 == 0 {
+		err = errors.New("Vertical kernel has to be odd")
+		return
+	}
+	k = hvkernel{h, v}
+
+	return
+}
+
+func (k hvkernel) HWeights() []float64 {
+	return k.h
+}
+
+func (k hvkernel) VWeights() []float64 {
+	return k.v
 }
 
 func NormalizeData(data []float64) ([]float64, float64) {
