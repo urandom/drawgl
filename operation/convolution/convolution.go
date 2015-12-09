@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"image"
 	"math"
+	"runtime"
+	"sync"
 
 	"github.com/urandom/drawgl"
 	"github.com/urandom/graph"
@@ -76,66 +78,110 @@ func (n Convolution) Process(wd graph.WalkData, buffers map[graph.ConnectorName]
 	half := int(size / 2)
 
 	opaque := buf.Opaque()
-	for y := b.Min.Y; y < b.Max.Y; y++ {
-		for x := b.Min.X; x < b.Max.X; x++ {
-			if hasRegion && !image.Pt(x, y).In(n.opts.Region) {
-				continue
+	parallelRowCycler(b, func(pt image.Point) {
+		if hasRegion && !pt.In(n.opts.Region) {
+			return
+		}
+
+		var rsum, gsum, bsum, asum float64
+		for cy := pt.Y - half; cy <= pt.Y+half; cy++ {
+			for cx := pt.X - half; cx <= pt.X+half; cx++ {
+				coeff := weights[l-((cy-pt.Y+half)*size+cx-pt.X+half)-1]
+
+				mx := cx
+				my := cy
+				if mx < b.Min.X {
+					mx = 2*b.Min.X - mx
+				} else if mx >= b.Max.X {
+					mx = (b.Max.X-1)*2 - mx
+				}
+
+				if my < b.Min.Y {
+					my = 2*b.Min.Y - my
+				} else if my >= b.Max.Y {
+					my = (b.Max.Y-1)*2 - my
+				}
+
+				c := src.NRGBA64At(mx, my)
+
+				if n.opts.Channel&drawgl.Red > 0 {
+					rsum += coeff * float64(c.R)
+				}
+				if n.opts.Channel&drawgl.Green > 0 {
+					gsum += coeff * float64(c.G)
+				}
+				if n.opts.Channel&drawgl.Blue > 0 {
+					bsum += coeff * float64(c.B)
+				}
+				if !opaque && n.opts.Channel&drawgl.Alpha > 0 {
+					asum += coeff * float64(c.A)
+				}
 			}
+		}
 
-			var rsum, gsum, bsum, asum float64
-			for cy := y - half; cy <= y+half; cy++ {
-				for cx := x - half; cx <= x+half; cx++ {
-					coeff := weights[l-((cy-y+half)*size+cx-x+half)-1]
+		c := src.NRGBA64At(pt.X, pt.Y)
 
-					mx := cx
-					my := cy
-					if mx < b.Min.X {
-						mx = 2*b.Min.X - mx
-					} else if mx >= b.Max.X {
-						mx = (b.Max.X-1)*2 - mx
-					}
+		if n.opts.Channel&drawgl.Red > 0 {
+			c.R = drawgl.ClampUint16(rsum + offset)
+		}
+		if n.opts.Channel&drawgl.Green > 0 {
+			c.G = drawgl.ClampUint16(gsum + offset)
+		}
+		if n.opts.Channel&drawgl.Blue > 0 {
+			c.B = drawgl.ClampUint16(bsum + offset)
+		}
+		if !opaque && n.opts.Channel&drawgl.Alpha > 0 {
+			c.A = drawgl.ClampUint16(asum + offset)
+		}
 
-					if my < b.Min.Y {
-						my = 2*b.Min.Y - my
-					} else if my >= b.Max.Y {
-						my = (b.Max.Y-1)*2 - my
-					}
+		buf.SetNRGBA64(pt.X, pt.Y, c)
+	})
 
-					c := src.NRGBA64At(mx, my)
+	res.Buffer = buf
+}
 
-					if n.opts.Channel&drawgl.Red > 0 {
-						rsum += coeff * float64(c.R)
-					}
-					if n.opts.Channel&drawgl.Green > 0 {
-						gsum += coeff * float64(c.G)
-					}
-					if n.opts.Channel&drawgl.Blue > 0 {
-						bsum += coeff * float64(c.B)
-					}
-					if !opaque && n.opts.Channel&drawgl.Alpha > 0 {
-						asum += coeff * float64(c.A)
+func parallelRowCycler(b image.Rectangle, fn func(pt image.Point)) {
+	var wg sync.WaitGroup
+
+	rowchan := make(chan []int)
+
+	go func() {
+		defer close(rowchan)
+
+		capacity := 100
+		i := 0
+		chunk := make([]int, i, capacity)
+		for y := b.Min.Y; y < b.Max.Y; y++ {
+			chunk = append(chunk, y)
+
+			if i == cap(chunk) || y == b.Max.Y-1 {
+				rowchan <- chunk
+
+				if y != b.Max.Y-1 {
+					i = 0
+					chunk = make([]int, 0, capacity)
+				}
+			} else {
+				i++
+			}
+		}
+	}()
+
+	count := runtime.GOMAXPROCS(0)
+	wg.Add(count)
+
+	for i := 0; i < count; i++ {
+		go func() {
+			defer wg.Done()
+			for chunk := range rowchan {
+				for _, y := range chunk {
+					for x := b.Min.X; x < b.Max.X; x++ {
+						fn(image.Pt(x, y))
 					}
 				}
 			}
-
-			c := src.NRGBA64At(x, y)
-
-			if n.opts.Channel&drawgl.Red > 0 {
-				c.R = drawgl.ClampUint16(rsum + offset)
-			}
-			if n.opts.Channel&drawgl.Green > 0 {
-				c.G = drawgl.ClampUint16(gsum + offset)
-			}
-			if n.opts.Channel&drawgl.Blue > 0 {
-				c.B = drawgl.ClampUint16(bsum + offset)
-			}
-			if !opaque && n.opts.Channel&drawgl.Alpha > 0 {
-				c.A = drawgl.ClampUint16(asum + offset)
-			}
-
-			buf.SetNRGBA64(x, y, c)
-		}
+		}()
 	}
 
-	res.Buffer = buf
+	wg.Wait()
 }
