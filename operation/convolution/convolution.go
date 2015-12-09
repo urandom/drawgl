@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"image"
 	"math"
-	"runtime"
-	"sync"
 
 	"github.com/urandom/drawgl"
 	"github.com/urandom/graph"
@@ -30,9 +28,7 @@ func NewConvolutionLinker(opts ConvolutionOptions) (graph.Linker, error) {
 		return nil, errors.New("Empty kernel")
 	}
 
-	if opts.Channel == drawgl.All {
-		opts.Channel = drawgl.Red | drawgl.Green | drawgl.Blue | drawgl.Alpha
-	}
+	opts.Channel.Normalize()
 
 	return base.NewLinkerNode(Convolution{Node: base.NewNode(), opts: opts}), nil
 }
@@ -78,7 +74,7 @@ func (n Convolution) Process(wd graph.WalkData, buffers map[graph.ConnectorName]
 	half := int(size / 2)
 
 	opaque := buf.Opaque()
-	parallelRowCycler(b, func(pt image.Point) {
+	drawgl.ParallelRectangleIterator(b).Iterate(func(pt image.Point) {
 		if hasRegion && !pt.In(n.opts.Region) {
 			return
 		}
@@ -138,50 +134,4 @@ func (n Convolution) Process(wd graph.WalkData, buffers map[graph.ConnectorName]
 	})
 
 	res.Buffer = buf
-}
-
-func parallelRowCycler(b image.Rectangle, fn func(pt image.Point)) {
-	var wg sync.WaitGroup
-
-	rowchan := make(chan []int)
-
-	go func() {
-		defer close(rowchan)
-
-		capacity := 100
-		i := 0
-		chunk := make([]int, i, capacity)
-		for y := b.Min.Y; y < b.Max.Y; y++ {
-			chunk = append(chunk, y)
-
-			if i == cap(chunk) || y == b.Max.Y-1 {
-				rowchan <- chunk
-
-				if y != b.Max.Y-1 {
-					i = 0
-					chunk = make([]int, 0, capacity)
-				}
-			} else {
-				i++
-			}
-		}
-	}()
-
-	count := runtime.GOMAXPROCS(0)
-	wg.Add(count)
-
-	for i := 0; i < count; i++ {
-		go func() {
-			defer wg.Done()
-			for chunk := range rowchan {
-				for _, y := range chunk {
-					for x := b.Min.X; x < b.Max.X; x++ {
-						fn(image.Pt(x, y))
-					}
-				}
-			}
-		}()
-	}
-
-	wg.Wait()
 }

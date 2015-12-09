@@ -10,16 +10,6 @@ import (
 type Graph struct {
 }
 
-type Channel int
-
-const (
-	All Channel = iota << 1
-	Red
-	Green
-	Blue
-	Alpha
-)
-
 type Result struct {
 	Id     graph.Id
 	Buffer *image.NRGBA64
@@ -71,15 +61,6 @@ func (g Graph) Process(start graph.Linker) error {
 			resultSet[r.Id] = r
 		}
 	}
-}
-
-func CopyImage(img *image.NRGBA64) *image.NRGBA64 {
-	cp := new(image.NRGBA64)
-	*cp = *img
-	cp.Pix = make([]uint8, len(img.Pix))
-	copy(cp.Pix, img.Pix)
-
-	return cp
 }
 
 func copyMeta(meta Meta) (cp Meta) {
