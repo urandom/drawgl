@@ -11,7 +11,7 @@ import (
 type Channel int
 
 type RectangleIterator interface {
-	Iterate(mask Mask, fn func(pt image.Point, factor float64))
+	Iterate(mask Mask, fn func(pt image.Point, factor float32))
 }
 
 type ParallelRectangleIterator image.Rectangle
@@ -20,7 +20,7 @@ type LinearRectangleIterator image.Rectangle
 type FloatImage struct {
 	// Pix holds the image's pixels, in R, G, B, A order and big-endian format. The pixel at
 	// (x, y) starts at Pix[(y-Rect.Min.Y)*Stride + (x-Rect.Min.X)*4].
-	Pix []float64
+	Pix []ColorValue
 	// Stride is the Pix stride (in bytes) between vertically adjacent pixels.
 	Stride int
 	// Rect is the image's bounds.
@@ -55,7 +55,7 @@ func (c Channel) Is(o Channel) bool {
 	return c&o == o
 }
 
-func (rect ParallelRectangleIterator) Iterate(mask Mask, fn func(pt image.Point, factor float64)) {
+func (rect ParallelRectangleIterator) Iterate(mask Mask, fn func(pt image.Point, factor float32)) {
 	count := runtime.GOMAXPROCS(0)
 	if count == 1 {
 		LinearRectangleIterator(rect).Iterate(mask, fn)
@@ -108,7 +108,7 @@ func (rect ParallelRectangleIterator) Iterate(mask Mask, fn func(pt image.Point,
 	wg.Wait()
 }
 
-func (rect LinearRectangleIterator) Iterate(mask Mask, fn func(pt image.Point, factor float64)) {
+func (rect LinearRectangleIterator) Iterate(mask Mask, fn func(pt image.Point, factor float32)) {
 	for y := rect.Min.Y; y < rect.Max.Y; y++ {
 		for x := rect.Min.X; x < rect.Max.X; x++ {
 			pt := image.Pt(x, y)
@@ -212,7 +212,7 @@ func (p *FloatImage) Opaque() bool {
 // NewFloatImage returns a new FloatImage with the given bounds.
 func NewFloatImage(r image.Rectangle) *FloatImage {
 	w, h := r.Dx(), r.Dy()
-	pix := make([]float64, 4*w*h)
+	pix := make([]ColorValue, 4*w*h)
 	return &FloatImage{pix, 4 * w, r}
 }
 
@@ -224,13 +224,13 @@ func NewMask(image image.Image, rect image.Rectangle) Mask {
 func CopyImage(img *FloatImage) *FloatImage {
 	cp := new(FloatImage)
 	*cp = *img
-	cp.Pix = make([]float64, len(img.Pix))
+	cp.Pix = make([]ColorValue, len(img.Pix))
 	copy(cp.Pix, img.Pix)
 
 	return cp
 }
 
-func MaskFactor(pt image.Point, mask Mask) (factor float64) {
+func MaskFactor(pt image.Point, mask Mask) (factor float32) {
 	if mask.hasRect && !pt.In(mask.Rect) {
 		return 0
 	}
@@ -238,16 +238,17 @@ func MaskFactor(pt image.Point, mask Mask) (factor float64) {
 	if mask.hasImage {
 		_, _, _, ma := mask.Image.At(pt.X, pt.Y).RGBA()
 
-		return float64(ma) / float64(m)
+		return float32(ma) / float32(m)
 	}
 
 	return 1
 }
 
-func MaskColor(dst FloatColor, src FloatColor, c Channel, f float64, op draw.Op) FloatColor {
+func MaskColor(dst FloatColor, src FloatColor, c Channel, f float32, op draw.Op) FloatColor {
+	fv := ColorValue(f)
 	switch op {
 	case draw.Over:
-		switch f {
+		switch fv {
 		case 0:
 		case 1:
 			if c.Is(Red) {
@@ -264,20 +265,20 @@ func MaskColor(dst FloatColor, src FloatColor, c Channel, f float64, op draw.Op)
 			}
 		default:
 			if c.Is(Red) {
-				dst.R = dst.R/f + src.R*f
+				dst.R = dst.R/fv + src.R*fv
 			}
 			if c.Is(Green) {
-				dst.G = dst.G/f + src.G*f
+				dst.G = dst.G/fv + src.G*fv
 			}
 			if c.Is(Blue) {
-				dst.B = dst.B/f + src.B*f
+				dst.B = dst.B/fv + src.B*fv
 			}
 			if c.Is(Alpha) {
-				dst.A = dst.A/f + src.A*f
+				dst.A = dst.A/fv + src.A*fv
 			}
 		}
 	case draw.Src:
-		switch f {
+		switch fv {
 		case 0:
 			if c.Is(Red) {
 				dst.R = 0
@@ -306,16 +307,16 @@ func MaskColor(dst FloatColor, src FloatColor, c Channel, f float64, op draw.Op)
 			}
 		default:
 			if c.Is(Red) {
-				dst.R = src.R * f
+				dst.R = src.R * fv
 			}
 			if c.Is(Green) {
-				dst.G = src.G * f
+				dst.G = src.G * fv
 			}
 			if c.Is(Blue) {
-				dst.B = src.B * f
+				dst.B = src.B * fv
 			}
 			if c.Is(Alpha) {
-				dst.A = src.A * f
+				dst.A = src.A * fv
 			}
 		}
 	}

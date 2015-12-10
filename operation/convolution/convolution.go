@@ -57,10 +57,12 @@ func (n Convolution) Process(wd graph.WalkData, buffers map[graph.ConnectorName]
 		return
 	}
 
-	var weights []float64
-	var offset float64
+	var weights []float32
+	var offset drawgl.ColorValue
 	if n.opts.Normalize {
-		weights, offset = n.opts.Kernel.Normalized()
+		var o float32
+		weights, o = n.opts.Kernel.Normalized()
+		offset = drawgl.ColorValue(o)
 	} else {
 		weights = n.opts.Kernel.Weights()
 	}
@@ -78,29 +80,29 @@ func (n Convolution) Process(wd graph.WalkData, buffers map[graph.ConnectorName]
 		it = drawgl.ParallelRectangleIterator(b)
 	}
 
-	it.Iterate(n.opts.Mask, func(pt image.Point, f float64) {
+	it.Iterate(n.opts.Mask, func(pt image.Point, f float32) {
 		if f == 0 {
 			return
 		}
 
-		var rsum, gsum, bsum, asum float64
+		var rsum, gsum, bsum, asum drawgl.ColorValue
 		var center drawgl.FloatColor
 		for cy := pt.Y - half; cy <= pt.Y+half; cy++ {
 			for cx := pt.X - half; cx <= pt.X+half; cx++ {
-				coeff := weights[l-((cy-pt.Y+half)*size+cx-pt.X+half)-1]
+				coeff := drawgl.ColorValue(weights[l-((cy-pt.Y+half)*size+cx-pt.X+half)-1])
 
 				mx := cx
 				my := cy
 				if mx < b.Min.X {
-					mx = 2*b.Min.X - mx
+					mx = b.Min.X
 				} else if mx >= b.Max.X {
-					mx = (b.Max.X-1)*2 - mx
+					mx = b.Max.X - 1
 				}
 
 				if my < b.Min.Y {
-					my = 2*b.Min.Y - my
+					my = b.Min.Y
 				} else if my >= b.Max.Y {
-					my = (b.Max.Y-1)*2 - my
+					my = b.Max.Y - 1
 				}
 
 				c := src.UnsafeFloatAt(mx, my)
@@ -123,10 +125,11 @@ func (n Convolution) Process(wd graph.WalkData, buffers map[graph.ConnectorName]
 			}
 		}
 
+		offset = 0
 		cs := drawgl.FloatColor{
-			R: rsum + offset,
-			G: gsum + offset,
-			B: bsum + offset,
+			R: (rsum + offset),
+			G: (gsum + offset),
+			B: (bsum + offset),
 			A: center.A,
 		}
 

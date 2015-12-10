@@ -6,19 +6,19 @@ import (
 )
 
 type Kernel interface {
-	Weights() []float64
-	Normalized() ([]float64, float64)
+	Weights() []float32
+	Normalized() ([]float32, float32)
 }
 
 type HVKernel interface {
-	HWeights() []float64
-	VWeights() []float64
+	HWeights() []float32
+	VWeights() []float32
 }
 
-type kernel []float64
+type kernel []float32
 type hvkernel struct {
-	h []float64
-	v []float64
+	h []float32
+	v []float32
 }
 
 const (
@@ -26,7 +26,7 @@ const (
 	fullOffset = 1 / 0xffff
 )
 
-func NewKernel(data []float64) (k Kernel, err error) {
+func NewKernel(data []float32) (k Kernel, err error) {
 	size := int(math.Sqrt(float64(len(data))))
 	if size%2 == 0 || size*size != len(data) {
 		err = errors.New("Kernel has to be an odd square")
@@ -38,15 +38,15 @@ func NewKernel(data []float64) (k Kernel, err error) {
 	return
 }
 
-func (k kernel) Weights() []float64 {
+func (k kernel) Weights() []float32 {
 	return k
 }
 
-func (k kernel) Normalized() ([]float64, float64) {
+func (k kernel) Normalized() ([]float32, float32) {
 	return NormalizeData(k)
 }
 
-func NewHVKernel(h, v []float64) (k HVKernel, err error) {
+func NewHVKernel(h, v []float32) (k HVKernel, err error) {
 	if len(h)%2 == 0 {
 		err = errors.New("Horizontal kernel has to be odd")
 		return
@@ -60,21 +60,21 @@ func NewHVKernel(h, v []float64) (k HVKernel, err error) {
 	return
 }
 
-func (k hvkernel) HWeights() []float64 {
+func (k hvkernel) HWeights() []float32 {
 	return k.h
 }
 
-func (k hvkernel) VWeights() []float64 {
+func (k hvkernel) VWeights() []float32 {
 	return k.v
 }
 
-func NormalizeData(data []float64) ([]float64, float64) {
-	var sum float64
+func NormalizeData(data []float32) ([]float32, float32) {
+	var sum float32
 	for _, d := range data {
 		sum += d
 	}
 
-	var div, offset float64
+	var div, offset float32
 	if sum > 0 {
 		div = sum
 		offset = 0

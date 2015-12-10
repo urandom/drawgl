@@ -2,8 +2,10 @@ package drawgl
 
 import "image/color"
 
+type ColorValue float32
+
 type FloatColor struct {
-	R, G, B, A float64
+	R, G, B, A ColorValue
 }
 
 const (
@@ -15,10 +17,20 @@ var (
 )
 
 func (c FloatColor) RGBA() (uint32, uint32, uint32, uint32) {
-	return uint32(ClampColor(c.R) * maxColor),
-		uint32(ClampColor(c.G) * maxColor),
-		uint32(ClampColor(c.B) * maxColor),
-		uint32(ClampColor(c.A) * maxColor)
+	return uint32(c.R.Clamped()*maxColor + 0.5),
+		uint32(c.G.Clamped()*maxColor + 0.5),
+		uint32(c.B.Clamped()*maxColor + 0.5),
+		uint32(c.A.Clamped()*maxColor + 0.5)
+}
+
+func (v ColorValue) Clamped() ColorValue {
+	if v < 0 {
+		v = 0
+	} else if v > 1 {
+		v = 1
+	}
+
+	return v
 }
 
 func floatColorModel(c color.Color) color.Color {
@@ -27,16 +39,6 @@ func floatColorModel(c color.Color) color.Color {
 	}
 
 	r, g, b, a := c.RGBA()
-	return FloatColor{float64(r) / maxColor, float64(g) / maxColor,
-		float64(b) / maxColor, float64(a) / maxColor}
-}
-
-func ClampColor(in float64) float64 {
-	if in < 0 {
-		return 0
-	} else if in > maxColor {
-		return maxColor
-	}
-
-	return in
+	return FloatColor{ColorValue(r) / maxColor, ColorValue(g) / maxColor,
+		ColorValue(b) / maxColor, ColorValue(a) / maxColor}
 }

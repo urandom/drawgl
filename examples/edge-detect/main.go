@@ -37,7 +37,7 @@ func main() {
 		out = args[1]
 	}
 
-	kernel, err := convolution.NewKernel([]float64{-1, -1, -1, -1, 8, -1, -1, -1, -1})
+	kernel, err := convolution.NewKernel([]float32{-1, -1, -1, -1, 8, -1, -1, -1, -1})
 	exitWithError(err)
 	edge, err := convolution.NewConvolutionLinker(convolution.ConvolutionOptions{
 		Kernel:    kernel,
