@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"image"
+	"image/color"
+	"image/draw"
 	"math"
 
 	"github.com/urandom/drawgl"
@@ -20,7 +22,7 @@ type ConvolutionOptions struct {
 	Kernel    Kernel
 	Channel   drawgl.Channel
 	Normalize bool
-	Region    image.Rectangle
+	Mask      drawgl.Mask
 	Alpha     bool
 	Linear    bool
 }
@@ -56,11 +58,6 @@ func (n Convolution) Process(wd graph.WalkData, buffers map[graph.ConnectorName]
 		return
 	}
 
-	hasRegion := false
-	if !n.opts.Region.Empty() {
-		hasRegion = true
-	}
-
 	var weights []float64
 	var offset float64
 	if n.opts.Normalize {
@@ -82,8 +79,8 @@ func (n Convolution) Process(wd graph.WalkData, buffers map[graph.ConnectorName]
 		it = drawgl.ParallelRectangleIterator(b)
 	}
 
-	it.Iterate(func(pt image.Point) {
-		if hasRegion && !pt.In(n.opts.Region) {
+	it.Iterate(n.opts.Mask, func(pt image.Point, f float64) {
+		if f == 0 {
 			return
 		}
 
@@ -124,21 +121,19 @@ func (n Convolution) Process(wd graph.WalkData, buffers map[graph.ConnectorName]
 		}
 
 		c := src.NRGBA64At(pt.X, pt.Y)
-
-		if n.opts.Channel&drawgl.Red > 0 {
-			c.R = drawgl.ClampUint16(rsum + offset)
-		}
-		if n.opts.Channel&drawgl.Green > 0 {
-			c.G = drawgl.ClampUint16(gsum + offset)
-		}
-		if n.opts.Channel&drawgl.Blue > 0 {
-			c.B = drawgl.ClampUint16(bsum + offset)
-		}
-		if n.opts.Alpha && n.opts.Channel&drawgl.Alpha > 0 {
-			c.A = drawgl.ClampUint16(asum + offset)
+		cs := color.NRGBA64{
+			R: drawgl.ClampUint16(rsum + offset),
+			G: drawgl.ClampUint16(gsum + offset),
+			B: drawgl.ClampUint16(bsum + offset),
+			A: c.A,
 		}
 
-		buf.SetNRGBA64(pt.X, pt.Y, c)
+		if n.opts.Alpha {
+			cs.A = drawgl.ClampUint16(asum + offset)
+		}
+
+		buf.SetNRGBA64(pt.X, pt.Y,
+			drawgl.MaskColor(c, cs, n.opts.Channel, f, draw.Over))
 	})
 
 	res.Buffer = buf

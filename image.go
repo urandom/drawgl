@@ -2,6 +2,8 @@ package drawgl
 
 import (
 	"image"
+	"image/color"
+	"image/draw"
 	"runtime"
 	"sync"
 )
@@ -9,11 +11,19 @@ import (
 type Channel int
 
 type RectangleIterator interface {
-	Iterate(fn func(pt image.Point))
+	Iterate(mask Mask, fn func(pt image.Point, factor float64))
 }
 
 type ParallelRectangleIterator image.Rectangle
 type LinearRectangleIterator image.Rectangle
+
+type Mask struct {
+	Image image.Image
+	Rect  image.Rectangle
+
+	hasImage bool
+	hasRect  bool
+}
 
 const (
 	All Channel = iota
@@ -21,6 +31,8 @@ const (
 	Green
 	Blue
 	Alpha
+
+	m = 1<<16 - 1
 )
 
 func (c *Channel) Normalize() {
@@ -29,7 +41,11 @@ func (c *Channel) Normalize() {
 	}
 }
 
-func (rect ParallelRectangleIterator) Iterate(fn func(pt image.Point)) {
+func (c Channel) Is(o Channel) bool {
+	return c&o == o
+}
+
+func (rect ParallelRectangleIterator) Iterate(mask Mask, fn func(pt image.Point, factor float64)) {
 	var wg sync.WaitGroup
 
 	rowchan := make(chan []int)
@@ -65,7 +81,9 @@ func (rect ParallelRectangleIterator) Iterate(fn func(pt image.Point)) {
 			for chunk := range rowchan {
 				for _, y := range chunk {
 					for x := rect.Min.X; x < rect.Max.X; x++ {
-						fn(image.Pt(x, y))
+						pt := image.Pt(x, y)
+						f := MaskFactor(pt, mask)
+						fn(pt, f)
 					}
 				}
 			}
@@ -75,12 +93,19 @@ func (rect ParallelRectangleIterator) Iterate(fn func(pt image.Point)) {
 	wg.Wait()
 }
 
-func (rect LinearRectangleIterator) Iterate(fn func(pt image.Point)) {
+func (rect LinearRectangleIterator) Iterate(mask Mask, fn func(pt image.Point, factor float64)) {
 	for y := rect.Min.Y; y < rect.Max.Y; y++ {
 		for x := rect.Min.X; x < rect.Max.X; x++ {
-			fn(image.Pt(x, y))
+			pt := image.Pt(x, y)
+			f := MaskFactor(pt, mask)
+			fn(pt, f)
 		}
 	}
+}
+
+func NewMask(image image.Image, rect image.Rectangle) Mask {
+	return Mask{Image: image, Rect: rect, hasImage: image != nil, hasRect: !rect.Empty()}
+
 }
 
 func CopyImage(img *image.NRGBA64) *image.NRGBA64 {
@@ -90,4 +115,97 @@ func CopyImage(img *image.NRGBA64) *image.NRGBA64 {
 	copy(cp.Pix, img.Pix)
 
 	return cp
+}
+
+func MaskFactor(pt image.Point, mask Mask) (factor float64) {
+	if mask.hasRect && !pt.In(mask.Rect) {
+		return 0
+	}
+
+	if mask.hasImage {
+		_, _, _, ma := mask.Image.At(pt.X, pt.Y).RGBA()
+
+		return float64(ma) / float64(m)
+	}
+
+	return 1
+}
+
+func MaskColor(dst color.NRGBA64, src color.NRGBA64, c Channel, f float64, op draw.Op) color.NRGBA64 {
+	switch op {
+	case draw.Over:
+		switch f {
+		case 0:
+		case 1:
+			if c.Is(Red) {
+				dst.R = src.R
+			}
+			if c.Is(Green) {
+				dst.G = src.G
+			}
+			if c.Is(Blue) {
+				dst.B = src.B
+			}
+			if c.Is(Alpha) {
+				dst.A = src.A
+			}
+		default:
+			if c.Is(Red) {
+				dst.R = uint16(float64(dst.R)/f + float64(src.R)*f)
+			}
+			if c.Is(Green) {
+				dst.G = uint16(float64(dst.G)/f + float64(src.G)*f)
+			}
+			if c.Is(Blue) {
+				dst.B = uint16(float64(dst.B)/f + float64(src.B)*f)
+			}
+			if c.Is(Alpha) {
+				dst.A = uint16(float64(dst.A)/f + float64(src.A)*f)
+			}
+		}
+	case draw.Src:
+		switch f {
+		case 0:
+			if c.Is(Red) {
+				dst.R = 0
+			}
+			if c.Is(Green) {
+				dst.G = 0
+			}
+			if c.Is(Blue) {
+				dst.B = 0
+			}
+			if c.Is(Alpha) {
+				dst.A = 0
+			}
+		case 1:
+			if c.Is(Red) {
+				dst.R = src.R
+			}
+			if c.Is(Green) {
+				dst.G = src.G
+			}
+			if c.Is(Blue) {
+				dst.B = src.B
+			}
+			if c.Is(Alpha) {
+				dst.A = src.A
+			}
+		default:
+			if c.Is(Red) {
+				dst.R = uint16(float64(src.R) * f)
+			}
+			if c.Is(Green) {
+				dst.G = uint16(float64(src.G) * f)
+			}
+			if c.Is(Blue) {
+				dst.B = uint16(float64(src.B) * f)
+			}
+			if c.Is(Alpha) {
+				dst.A = uint16(float64(src.A) * f)
+			}
+		}
+	}
+
+	return dst
 }
