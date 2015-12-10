@@ -1,23 +1,40 @@
 package main
 
 import (
+	"flag"
 	"fmt"
+	"log"
 	"os"
+	"runtime/pprof"
 
 	"github.com/urandom/drawgl"
 	"github.com/urandom/drawgl/operation/convolution"
 	"github.com/urandom/drawgl/operation/io"
 )
 
+var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
+
 func main() {
-	if len(os.Args) == 1 {
+	flag.Parse()
+	if *cpuprofile != "" {
+		f, err := os.Create(*cpuprofile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
+	}
+
+	args := flag.Args()
+	if len(args) == 0 {
 		fmt.Fprintln(os.Stderr, "No input file given")
 		return
 	}
 
+	in := args[0]
 	out := "/tmp/out.png"
-	if len(os.Args) > 2 {
-		out = os.Args[2]
+	if len(args) > 1 {
+		out = args[1]
 	}
 
 	kernel, err := convolution.NewKernel([]float64{-1, -1, -1, -1, 8, -1, -1, -1, -1})
@@ -28,7 +45,7 @@ func main() {
 	})
 	exitWithError(err)
 
-	load, err := io.NewLoadLinker(io.LoadOptions{Path: os.Args[1]})
+	load, err := io.NewLoadLinker(io.LoadOptions{Path: in})
 	exitWithError(err)
 	save, err := io.NewSaveLinker(io.SaveOptions{Path: out})
 	exitWithError(err)
@@ -42,7 +59,7 @@ func main() {
 	if err == nil {
 		fmt.Printf("Converted image saved to '%s'\n", out)
 	} else {
-		fmt.Fprintf(os.Stderr, "Error convertig image %s: %v\n", os.Args[1], err)
+		fmt.Fprintf(os.Stderr, "Error convertig image %s: %v\n", in, err)
 	}
 }
 

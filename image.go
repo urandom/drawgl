@@ -46,6 +46,12 @@ func (c Channel) Is(o Channel) bool {
 }
 
 func (rect ParallelRectangleIterator) Iterate(mask Mask, fn func(pt image.Point, factor float64)) {
+	count := runtime.GOMAXPROCS(0)
+	if count == 1 {
+		LinearRectangleIterator(rect).Iterate(mask, fn)
+		return
+	}
+
 	var wg sync.WaitGroup
 
 	rowchan := make(chan []int)
@@ -72,7 +78,6 @@ func (rect ParallelRectangleIterator) Iterate(mask Mask, fn func(pt image.Point,
 		}
 	}()
 
-	count := runtime.GOMAXPROCS(0)
 	wg.Add(count)
 
 	for i := 0; i < count; i++ {

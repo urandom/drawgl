@@ -85,6 +85,7 @@ func (n Convolution) Process(wd graph.WalkData, buffers map[graph.ConnectorName]
 		}
 
 		var rsum, gsum, bsum, asum float64
+		var center color.NRGBA64
 		for cy := pt.Y - half; cy <= pt.Y+half; cy++ {
 			for cx := pt.X - half; cx <= pt.X+half; cx++ {
 				coeff := weights[l-((cy-pt.Y+half)*size+cx-pt.X+half)-1]
@@ -104,6 +105,9 @@ func (n Convolution) Process(wd graph.WalkData, buffers map[graph.ConnectorName]
 				}
 
 				c := src.NRGBA64At(mx, my)
+				if mx == pt.X && my == pt.Y {
+					center = c
+				}
 
 				if n.opts.Channel&drawgl.Red > 0 {
 					rsum += coeff * float64(c.R)
@@ -120,12 +124,11 @@ func (n Convolution) Process(wd graph.WalkData, buffers map[graph.ConnectorName]
 			}
 		}
 
-		c := src.NRGBA64At(pt.X, pt.Y)
 		cs := color.NRGBA64{
 			R: drawgl.ClampUint16(rsum + offset),
 			G: drawgl.ClampUint16(gsum + offset),
 			B: drawgl.ClampUint16(bsum + offset),
-			A: c.A,
+			A: center.A,
 		}
 
 		if n.opts.Alpha {
@@ -133,7 +136,7 @@ func (n Convolution) Process(wd graph.WalkData, buffers map[graph.ConnectorName]
 		}
 
 		buf.SetNRGBA64(pt.X, pt.Y,
-			drawgl.MaskColor(c, cs, n.opts.Channel, f, draw.Over))
+			drawgl.MaskColor(center, cs, n.opts.Channel, f, draw.Over))
 	})
 
 	res.Buffer = buf
