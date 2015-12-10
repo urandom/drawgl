@@ -68,11 +68,11 @@ func (n Load) Process(wd graph.WalkData, buffers map[graph.ConnectorName]drawgl.
 	img, res.Meta[InputFormat], err = image.Decode(reader)
 
 	if err == nil {
-		if d, ok := img.(*image.NRGBA64); ok {
+		if d, ok := img.(*drawgl.FloatImage); ok {
 			res.Buffer = d
 		} else {
 			b := img.Bounds()
-			res.Buffer = image.NewNRGBA64(b)
+			res.Buffer = drawgl.NewFloatImage(b)
 			draw.Draw(res.Buffer, b, img, b.Min, draw.Src)
 		}
 	}

@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"image"
-	"image/color"
 	"image/draw"
 	"math"
 
@@ -85,7 +84,7 @@ func (n Convolution) Process(wd graph.WalkData, buffers map[graph.ConnectorName]
 		}
 
 		var rsum, gsum, bsum, asum float64
-		var center color.NRGBA64
+		var center drawgl.FloatColor
 		for cy := pt.Y - half; cy <= pt.Y+half; cy++ {
 			for cx := pt.X - half; cx <= pt.X+half; cx++ {
 				coeff := weights[l-((cy-pt.Y+half)*size+cx-pt.X+half)-1]
@@ -104,38 +103,38 @@ func (n Convolution) Process(wd graph.WalkData, buffers map[graph.ConnectorName]
 					my = (b.Max.Y-1)*2 - my
 				}
 
-				c := src.NRGBA64At(mx, my)
+				c := src.UnsafeFloatAt(mx, my)
 				if mx == pt.X && my == pt.Y {
 					center = c
 				}
 
 				if n.opts.Channel&drawgl.Red > 0 {
-					rsum += coeff * float64(c.R)
+					rsum += coeff * c.R
 				}
 				if n.opts.Channel&drawgl.Green > 0 {
-					gsum += coeff * float64(c.G)
+					gsum += coeff * c.G
 				}
 				if n.opts.Channel&drawgl.Blue > 0 {
-					bsum += coeff * float64(c.B)
+					bsum += coeff * c.B
 				}
 				if n.opts.Alpha && n.opts.Channel&drawgl.Alpha > 0 {
-					asum += coeff * float64(c.A)
+					asum += coeff * c.A
 				}
 			}
 		}
 
-		cs := color.NRGBA64{
-			R: drawgl.ClampUint16(rsum + offset),
-			G: drawgl.ClampUint16(gsum + offset),
-			B: drawgl.ClampUint16(bsum + offset),
+		cs := drawgl.FloatColor{
+			R: rsum + offset,
+			G: gsum + offset,
+			B: bsum + offset,
 			A: center.A,
 		}
 
 		if n.opts.Alpha {
-			cs.A = drawgl.ClampUint16(asum + offset)
+			cs.A = asum + offset
 		}
 
-		buf.SetNRGBA64(pt.X, pt.Y,
+		buf.UnsafeSetColor(pt.X, pt.Y,
 			drawgl.MaskColor(center, cs, n.opts.Channel, f, draw.Over))
 	})
 

@@ -2,7 +2,6 @@ package drawgl
 
 import (
 	"fmt"
-	"image"
 
 	"github.com/urandom/graph"
 )
@@ -12,7 +11,7 @@ type Graph struct {
 
 type Result struct {
 	Id     graph.Id
-	Buffer *image.NRGBA64
+	Buffer *FloatImage
 	Meta   Meta
 	Error  error
 }
@@ -73,14 +72,4 @@ func copyMeta(meta Meta) (cp Meta) {
 	}
 
 	return
-}
-
-func ClampUint16(in float64) uint16 {
-	if in > 0xffff {
-		return 0xffff
-	} else if in < 0 {
-		return 0
-	}
-
-	return uint16(in)
 }

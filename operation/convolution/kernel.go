@@ -21,6 +21,11 @@ type hvkernel struct {
 	v []float64
 }
 
+const (
+	halfOffset = 0.5 / 0xffff
+	fullOffset = 1 / 0xffff
+)
+
 func NewKernel(data []float64) (k Kernel, err error) {
 	size := int(math.Sqrt(float64(len(data))))
 	if size%2 == 0 || size*size != len(data) {
@@ -75,10 +80,10 @@ func NormalizeData(data []float64) ([]float64, float64) {
 		offset = 0
 	} else if sum < 0 {
 		div = -sum
-		offset = 1
+		offset = fullOffset
 	} else {
 		div = 1
-		offset = 0.5
+		offset = halfOffset
 	}
 
 	if div != 1 {
