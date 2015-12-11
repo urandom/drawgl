@@ -37,21 +37,31 @@ func main() {
 		out = args[1]
 	}
 
-	kernel, err := convolution.NewKernel([]float32{-1, -1, -1, -1, 8, -1, -1, -1, -1})
-	exitWithError(err)
-	edge, err := convolution.NewConvolutionLinker(convolution.ConvolutionOptions{
-		Kernel:    kernel,
-		Normalize: true,
-	})
-	exitWithError(err)
+	/*
+		kernel, err := convolution.NewKernel([]float32{-1, -1, -1, -1, 8, -1, -1, -1, -1})
+		exitWithError(err)
+		edge, err := convolution.NewConvolutionLinker(convolution.ConvolutionOptions{
+			Kernel:    kernel,
+			Normalize: true,
+		})
+		exitWithError(err)
+	*/
 
 	load, err := io.NewLoadLinker(io.LoadOptions{Path: in})
 	exitWithError(err)
 	save, err := io.NewSaveLinker(io.SaveOptions{Path: out})
 	exitWithError(err)
 
-	load.Link(edge)
-	edge.Link(save)
+	blur, err := convolution.NewBoxBlurLinker(convolution.BoxBlurOptions{Radius: 4})
+	exitWithError(err)
+
+	load.Link(blur)
+	blur.Link(save)
+
+	/*
+		load.Link(edge)
+		edge.Link(save)
+	*/
 
 	graph := drawgl.Graph{}
 	err = graph.Process(load)

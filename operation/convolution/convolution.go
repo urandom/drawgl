@@ -22,7 +22,6 @@ type ConvolutionOptions struct {
 	Channel   drawgl.Channel
 	Normalize bool
 	Mask      drawgl.Mask
-	Alpha     bool
 	Linear    bool
 }
 
@@ -38,9 +37,11 @@ func NewConvolutionLinker(opts ConvolutionOptions) (graph.Linker, error) {
 
 func (n Convolution) Process(wd graph.WalkData, buffers map[graph.ConnectorName]drawgl.Result, output chan<- drawgl.Result) {
 	var err error
+	var buf *drawgl.FloatImage
 	res := drawgl.Result{Id: n.Id()}
 
 	defer func() {
+		res.Buffer = buf
 		if err != nil {
 			res.Error = fmt.Errorf("Error applying convolution using %v: %v", n.opts, err)
 		}
@@ -50,7 +51,7 @@ func (n Convolution) Process(wd graph.WalkData, buffers map[graph.ConnectorName]
 	}()
 
 	r := buffers[graph.InputName]
-	buf := r.Buffer
+	buf = r.Buffer
 	res.Meta = r.Meta
 	if buf == nil {
 		err = fmt.Errorf("no input buffer")
@@ -73,12 +74,7 @@ func (n Convolution) Process(wd graph.WalkData, buffers map[graph.ConnectorName]
 	size := int(math.Sqrt(float64(l)))
 	half := int(size / 2)
 
-	var it drawgl.RectangleIterator
-	if n.opts.Linear {
-		it = drawgl.LinearRectangleIterator(b)
-	} else {
-		it = drawgl.ParallelRectangleIterator(b)
-	}
+	it := drawgl.DefaultRectangleIterator(b, n.opts.Linear)
 
 	it.Iterate(n.opts.Mask, func(pt image.Point, f float32) {
 		if f == 0 {
@@ -110,36 +106,29 @@ func (n Convolution) Process(wd graph.WalkData, buffers map[graph.ConnectorName]
 					center = c
 				}
 
-				if n.opts.Channel&drawgl.Red > 0 {
+				if n.opts.Channel.Is(drawgl.Red) {
 					rsum += coeff * c.R
 				}
-				if n.opts.Channel&drawgl.Green > 0 {
+				if n.opts.Channel.Is(drawgl.Green) {
 					gsum += coeff * c.G
 				}
-				if n.opts.Channel&drawgl.Blue > 0 {
+				if n.opts.Channel.Is(drawgl.Blue) {
 					bsum += coeff * c.B
 				}
-				if n.opts.Alpha && n.opts.Channel&drawgl.Alpha > 0 {
+				if n.opts.Channel.Is(drawgl.Alpha) {
 					asum += coeff * c.A
 				}
 			}
 		}
 
-		offset = 0
 		cs := drawgl.FloatColor{
-			R: (rsum + offset),
-			G: (gsum + offset),
-			B: (bsum + offset),
-			A: center.A,
-		}
-
-		if n.opts.Alpha {
-			cs.A = asum + offset
+			R: rsum + offset,
+			G: gsum + offset,
+			B: bsum + offset,
+			A: asum + offset,
 		}
 
 		buf.UnsafeSetColor(pt.X, pt.Y,
 			drawgl.MaskColor(center, cs, n.opts.Channel, f, draw.Over))
 	})
-
-	res.Buffer = buf
 }

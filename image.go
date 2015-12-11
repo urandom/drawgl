@@ -11,7 +11,15 @@ import (
 type Channel int
 
 type RectangleIterator interface {
+	// Iterate iterates over the image buffer, calling the fn function for each
+	// point. The cycle order is row -> column. Implementations must ensure
+	// that all columns of a given row are received in a single goroutine
 	Iterate(mask Mask, fn func(pt image.Point, factor float32))
+	// VerticalIterate iterates over the image buffer, calling the fn function
+	// for each point. The cycle order is column -> row. Implementations must
+	// ensure that all rows of a given column are received in a single
+	// goroutine
+	VerticalIterate(mask Mask, fn func(pt image.Point, factor float32))
 }
 
 type ParallelRectangleIterator image.Rectangle
@@ -36,7 +44,7 @@ type Mask struct {
 }
 
 const (
-	All Channel = iota
+	RGB Channel = iota
 	Red         = 1 << iota
 	Green
 	Blue
@@ -46,13 +54,21 @@ const (
 )
 
 func (c *Channel) Normalize() {
-	if *c == All {
-		*c = Red | Green | Blue | Alpha
+	if *c == RGB {
+		*c = Red | Green | Blue
 	}
 }
 
 func (c Channel) Is(o Channel) bool {
 	return c&o == o
+}
+
+func DefaultRectangleIterator(rect image.Rectangle, forceLinear ...bool) RectangleIterator {
+	if len(forceLinear) > 0 && forceLinear[0] || runtime.GOMAXPROCS(0) == 1 {
+		return LinearRectangleIterator(rect)
+	}
+
+	return ParallelRectangleIterator(rect)
 }
 
 func (rect ParallelRectangleIterator) Iterate(mask Mask, fn func(pt image.Point, factor float32)) {
@@ -108,9 +124,72 @@ func (rect ParallelRectangleIterator) Iterate(mask Mask, fn func(pt image.Point,
 	wg.Wait()
 }
 
+func (rect ParallelRectangleIterator) VerticalIterate(mask Mask, fn func(pt image.Point, factor float32)) {
+	count := runtime.GOMAXPROCS(0)
+	if count == 1 {
+		LinearRectangleIterator(rect).VerticalIterate(mask, fn)
+		return
+	}
+
+	var wg sync.WaitGroup
+
+	rowchan := make(chan []int)
+
+	go func() {
+		defer close(rowchan)
+
+		capacity := 200
+		i := 0
+		chunk := make([]int, i, capacity)
+		for x := rect.Min.X; x < rect.Max.X; x++ {
+			chunk = append(chunk, x)
+
+			if i == cap(chunk) || x == rect.Max.X-1 {
+				rowchan <- chunk
+
+				if x != rect.Max.X-1 {
+					i = 0
+					chunk = make([]int, 0, capacity)
+				}
+			} else {
+				i++
+			}
+		}
+	}()
+
+	wg.Add(count)
+
+	for i := 0; i < count; i++ {
+		go func() {
+			defer wg.Done()
+			for chunk := range rowchan {
+				for _, x := range chunk {
+					for y := rect.Min.Y; y < rect.Max.Y; y++ {
+						pt := image.Pt(x, y)
+						f := MaskFactor(pt, mask)
+						fn(pt, f)
+					}
+				}
+			}
+		}()
+	}
+
+	wg.Wait()
+}
+
 func (rect LinearRectangleIterator) Iterate(mask Mask, fn func(pt image.Point, factor float32)) {
 	for y := rect.Min.Y; y < rect.Max.Y; y++ {
 		for x := rect.Min.X; x < rect.Max.X; x++ {
+			pt := image.Pt(x, y)
+			f := MaskFactor(pt, mask)
+			fn(pt, f)
+		}
+	}
+}
+
+func (rect LinearRectangleIterator) VerticalIterate(mask Mask, fn func(pt image.Point, factor float32)) {
+	for x := rect.Min.X; x < rect.Max.X; x++ {
+		for y := rect.Min.Y; y < rect.Max.Y; y++ {
 			pt := image.Pt(x, y)
 			f := MaskFactor(pt, mask)
 			fn(pt, f)

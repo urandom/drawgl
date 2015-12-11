@@ -13,6 +13,8 @@ type Kernel interface {
 type HVKernel interface {
 	HWeights() []float32
 	VWeights() []float32
+	HNormalized() ([]float32, float32)
+	VNormalized() ([]float32, float32)
 }
 
 type kernel []float32
@@ -66,6 +68,14 @@ func (k hvkernel) HWeights() []float32 {
 
 func (k hvkernel) VWeights() []float32 {
 	return k.v
+}
+
+func (k hvkernel) HNormalized() ([]float32, float32) {
+	return NormalizeData(k.h)
+}
+
+func (k hvkernel) VNormalized() ([]float32, float32) {
+	return NormalizeData(k.v)
 }
 
 func NormalizeData(data []float32) ([]float32, float32) {
