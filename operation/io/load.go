@@ -54,6 +54,7 @@ func (n Load) Process(wd graph.WalkData, buffers map[graph.ConnectorName]drawgl.
 	reader := n.opts.Reader
 	if reader == nil {
 		reader, err = os.Open(n.opts.Path)
+		defer reader.(*os.File).Close()
 
 		if err != nil {
 			return

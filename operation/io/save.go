@@ -76,6 +76,7 @@ func (n Save) Process(wd graph.WalkData, buffers map[graph.ConnectorName]drawgl.
 	w := n.opts.Writer
 	if w == nil && n.opts.Path != "" {
 		w, err = os.Create(n.opts.Path)
+		defer w.(*os.File).Close()
 		if err != nil {
 			return
 		}
