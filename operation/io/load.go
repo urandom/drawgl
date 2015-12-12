@@ -10,7 +10,6 @@ import (
 	"github.com/urandom/drawgl"
 	"github.com/urandom/graph"
 	"github.com/urandom/graph/base"
-	"golang.org/x/image/draw"
 
 	_ "image/gif"
 	_ "image/jpeg"
@@ -68,12 +67,6 @@ func (n Load) Process(wd graph.WalkData, buffers map[graph.ConnectorName]drawgl.
 	img, res.Meta[InputFormat], err = image.Decode(reader)
 
 	if err == nil {
-		if d, ok := img.(*drawgl.FloatImage); ok {
-			res.Buffer = d
-		} else {
-			b := img.Bounds()
-			res.Buffer = drawgl.NewFloatImage(b)
-			draw.Draw(res.Buffer, b, img, b.Min, draw.Src)
-		}
+		res.Buffer = drawgl.ConvertImage(img)
 	}
 }

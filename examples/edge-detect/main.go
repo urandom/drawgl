@@ -52,7 +52,7 @@ func main() {
 	save, err := io.NewSaveLinker(io.SaveOptions{Path: out})
 	exitWithError(err)
 
-	blur, err := convolution.NewBoxBlurLinker(convolution.BoxBlurOptions{Radius: 4})
+	blur, err := convolution.NewBoxBlurLinker(convolution.BoxBlurOptions{})
 	exitWithError(err)
 
 	load.Link(blur)

@@ -13,8 +13,7 @@ import (
 
 type BoxBlur struct {
 	base.Node
-	kernel HVKernel
-	opts   BoxBlurOptions
+	opts BoxBlurOptions
 }
 
 type BoxBlurOptions struct {
@@ -27,22 +26,14 @@ type BoxBlurOptions struct {
 func NewBoxBlurLinker(opts BoxBlurOptions) (graph.Linker, error) {
 	if opts.Radius < 0 {
 		return nil, errors.New("Radius cannot be less than 0")
-	}
-
-	k := make([]float32, 2*opts.Radius+1)
-	for i := 0; i < 2*opts.Radius+1; i++ {
-		k[i] = 1
-	}
-	kernel, err := NewHVKernel(k, k)
-	if err != nil {
-		return nil, err
+	} else if opts.Radius == 0 {
+		opts.Radius = 4
 	}
 
 	opts.Channel.Normalize()
 	return base.NewLinkerNode(BoxBlur{
-		Node:   base.NewNode(),
-		kernel: kernel,
-		opts:   opts,
+		Node: base.NewNode(),
+		opts: opts,
 	}), nil
 }
 
@@ -69,10 +60,7 @@ func (n BoxBlur) Process(wd graph.WalkData, buffers map[graph.ConnectorName]draw
 		return
 	}
 
-	hk, _ := n.kernel.HNormalized()
-	hcoeff := drawgl.ColorValue(hk[0])
-	vk, _ := n.kernel.VNormalized()
-	vcoeff := drawgl.ColorValue(vk[0])
+	coeff := 1 / drawgl.ColorValue(2*n.opts.Radius+1)
 
 	src := drawgl.CopyImage(buf)
 	b := buf.Bounds()
@@ -102,41 +90,45 @@ func (n BoxBlur) Process(wd graph.WalkData, buffers map[graph.ConnectorName]draw
 				}
 
 				if n.opts.Channel.Is(drawgl.Red) {
-					rsum += hcoeff * c.R
+					rsum += coeff * c.R
 				}
 				if n.opts.Channel.Is(drawgl.Green) {
-					gsum += hcoeff * c.G
+					gsum += coeff * c.G
 				}
 				if n.opts.Channel.Is(drawgl.Blue) {
-					bsum += hcoeff * c.B
+					bsum += coeff * c.B
 				}
 				if n.opts.Channel.Is(drawgl.Alpha) {
-					asum += hcoeff * c.A
+					asum += coeff * c.A
 				}
 			}
 		} else {
 			center = src.UnsafeFloatAt(pt.X, pt.Y)
-			prev := src.UnsafeFloatAt(pt.X-1, pt.Y)
+			prev := buf.UnsafeFloatAt(pt.X-1, pt.Y)
 
 			var leftmost, rightmost drawgl.FloatColor
 			if pt.X-n.opts.Radius < b.Min.X {
 				leftmost = src.UnsafeFloatAt(b.Min.X, pt.Y)
+			} else {
+				leftmost = src.UnsafeFloatAt(pt.X-n.opts.Radius, pt.Y)
 			}
 			if pt.X+n.opts.Radius > b.Max.X-1 {
 				rightmost = src.UnsafeFloatAt(b.Max.X-1, pt.Y)
+			} else {
+				rightmost = src.UnsafeFloatAt(pt.X+n.opts.Radius, pt.Y)
 			}
 
 			if n.opts.Channel.Is(drawgl.Red) {
-				rsum += prev.R - hcoeff*leftmost.R + hcoeff*rightmost.R
+				rsum += prev.R - coeff*leftmost.R + coeff*rightmost.R
 			}
 			if n.opts.Channel.Is(drawgl.Green) {
-				gsum += prev.G - hcoeff*leftmost.G + hcoeff*rightmost.G
+				gsum += prev.G - coeff*leftmost.G + coeff*rightmost.G
 			}
 			if n.opts.Channel.Is(drawgl.Blue) {
-				bsum += prev.B - hcoeff*leftmost.B + hcoeff*rightmost.B
+				bsum += prev.B - coeff*leftmost.B + coeff*rightmost.B
 			}
 			if n.opts.Channel.Is(drawgl.Alpha) {
-				asum += prev.A - hcoeff*leftmost.A + hcoeff*rightmost.A
+				asum += prev.A - coeff*leftmost.A + coeff*rightmost.A
 			}
 		}
 
@@ -175,41 +167,45 @@ func (n BoxBlur) Process(wd graph.WalkData, buffers map[graph.ConnectorName]draw
 				}
 
 				if n.opts.Channel.Is(drawgl.Red) {
-					rsum += vcoeff * c.R
+					rsum += coeff * c.R
 				}
 				if n.opts.Channel.Is(drawgl.Green) {
-					gsum += vcoeff * c.G
+					gsum += coeff * c.G
 				}
 				if n.opts.Channel.Is(drawgl.Blue) {
-					bsum += vcoeff * c.B
+					bsum += coeff * c.B
 				}
 				if n.opts.Channel.Is(drawgl.Alpha) {
-					asum += vcoeff * c.A
+					asum += coeff * c.A
 				}
 			}
 		} else {
 			center = src.UnsafeFloatAt(pt.X, pt.Y)
-			prev := src.UnsafeFloatAt(pt.X, pt.Y-1)
+			prev := buf.UnsafeFloatAt(pt.X, pt.Y-1)
 
 			var leftmost, rightmost drawgl.FloatColor
 			if pt.Y-n.opts.Radius < b.Min.Y {
 				leftmost = src.UnsafeFloatAt(pt.X, b.Min.Y)
+			} else {
+				leftmost = src.UnsafeFloatAt(pt.X, pt.Y-n.opts.Radius)
 			}
 			if pt.Y+n.opts.Radius > b.Max.Y-1 {
 				rightmost = src.UnsafeFloatAt(pt.X, b.Max.Y-1)
+			} else {
+				rightmost = src.UnsafeFloatAt(pt.X, pt.Y+n.opts.Radius)
 			}
 
 			if n.opts.Channel.Is(drawgl.Red) {
-				rsum += prev.R - hcoeff*leftmost.R + hcoeff*rightmost.R
+				rsum += prev.R - coeff*leftmost.R + coeff*rightmost.R
 			}
 			if n.opts.Channel.Is(drawgl.Green) {
-				gsum += prev.G - hcoeff*leftmost.G + hcoeff*rightmost.G
+				gsum += prev.G - coeff*leftmost.G + coeff*rightmost.G
 			}
 			if n.opts.Channel.Is(drawgl.Blue) {
-				bsum += prev.B - hcoeff*leftmost.B + hcoeff*rightmost.B
+				bsum += prev.B - coeff*leftmost.B + coeff*rightmost.B
 			}
 			if n.opts.Channel.Is(drawgl.Alpha) {
-				asum += prev.A - hcoeff*leftmost.A + hcoeff*rightmost.A
+				asum += prev.A - coeff*leftmost.A + coeff*rightmost.A
 			}
 		}
 

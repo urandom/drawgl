@@ -300,6 +300,18 @@ func NewMask(image image.Image, rect image.Rectangle) Mask {
 
 }
 
+func ConvertImage(img image.Image) *FloatImage {
+	if d, ok := img.(*FloatImage); ok {
+		return d
+	} else {
+		b := img.Bounds()
+		fi := NewFloatImage(b)
+		draw.Draw(fi, b, img, b.Min, draw.Src)
+
+		return fi
+	}
+}
+
 func CopyImage(img *FloatImage) *FloatImage {
 	cp := new(FloatImage)
 	*cp = *img

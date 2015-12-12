@@ -3,18 +3,20 @@ package convolution
 import (
 	"errors"
 	"math"
+
+	"github.com/urandom/drawgl"
 )
 
 type Kernel interface {
-	Weights() []float32
-	Normalized() ([]float32, float32)
+	Weights() []drawgl.ColorValue
+	Normalized() ([]drawgl.ColorValue, drawgl.ColorValue)
 }
 
 type HVKernel interface {
-	HWeights() []float32
-	VWeights() []float32
-	HNormalized() ([]float32, float32)
-	VNormalized() ([]float32, float32)
+	HWeights() []drawgl.ColorValue
+	VWeights() []drawgl.ColorValue
+	HNormalized() ([]drawgl.ColorValue, drawgl.ColorValue)
+	VNormalized() ([]drawgl.ColorValue, drawgl.ColorValue)
 }
 
 type kernel []float32
@@ -40,11 +42,15 @@ func NewKernel(data []float32) (k Kernel, err error) {
 	return
 }
 
-func (k kernel) Weights() []float32 {
-	return k
+func (k kernel) Weights() []drawgl.ColorValue {
+	w := make([]drawgl.ColorValue, len(k))
+	for i := range k {
+		w[i] = drawgl.ColorValue(k[i])
+	}
+	return w
 }
 
-func (k kernel) Normalized() ([]float32, float32) {
+func (k kernel) Normalized() ([]drawgl.ColorValue, drawgl.ColorValue) {
 	return NormalizeData(k)
 }
 
@@ -62,29 +68,41 @@ func NewHVKernel(h, v []float32) (k HVKernel, err error) {
 	return
 }
 
-func (k hvkernel) HWeights() []float32 {
-	return k.h
+func (k hvkernel) HWeights() []drawgl.ColorValue {
+	w := make([]drawgl.ColorValue, len(k.h))
+	for i := range k.h {
+		w[i] = drawgl.ColorValue(k.h[i])
+	}
+	return w
 }
 
-func (k hvkernel) VWeights() []float32 {
-	return k.v
+func (k hvkernel) VWeights() []drawgl.ColorValue {
+	w := make([]drawgl.ColorValue, len(k.v))
+	for i := range k.v {
+		w[i] = drawgl.ColorValue(k.v[i])
+	}
+	return w
 }
 
-func (k hvkernel) HNormalized() ([]float32, float32) {
+func (k hvkernel) HNormalized() ([]drawgl.ColorValue, drawgl.ColorValue) {
 	return NormalizeData(k.h)
 }
 
-func (k hvkernel) VNormalized() ([]float32, float32) {
+func (k hvkernel) VNormalized() ([]drawgl.ColorValue, drawgl.ColorValue) {
 	return NormalizeData(k.v)
 }
 
-func NormalizeData(data []float32) ([]float32, float32) {
-	var sum float32
-	for _, d := range data {
+func NormalizeData(data []float32) (normalized []drawgl.ColorValue, offset drawgl.ColorValue) {
+	var sum drawgl.ColorValue
+
+	normalized = make([]drawgl.ColorValue, len(data))
+	for i := range data {
+		d := drawgl.ColorValue(data[i])
 		sum += d
+		normalized[i] = d
 	}
 
-	var div, offset float32
+	var div drawgl.ColorValue
 	if sum > 0 {
 		div = sum
 		offset = 0
@@ -97,11 +115,11 @@ func NormalizeData(data []float32) ([]float32, float32) {
 	}
 
 	if div != 1 {
-		for i := range data {
-			data[i] = data[i] / div
+		for i := range normalized {
+			normalized[i] = normalized[i] / div
 		}
 
 	}
 
-	return data, offset
+	return
 }

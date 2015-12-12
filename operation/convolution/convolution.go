@@ -26,7 +26,7 @@ type ConvolutionOptions struct {
 }
 
 func NewConvolutionLinker(opts ConvolutionOptions) (graph.Linker, error) {
-	if len(opts.Kernel.Weights()) == 0 {
+	if opts.Kernel == nil || len(opts.Kernel.Weights()) == 0 {
 		return nil, errors.New("Empty kernel")
 	}
 
@@ -58,12 +58,10 @@ func (n Convolution) Process(wd graph.WalkData, buffers map[graph.ConnectorName]
 		return
 	}
 
-	var weights []float32
+	var weights []drawgl.ColorValue
 	var offset drawgl.ColorValue
 	if n.opts.Normalize {
-		var o float32
-		weights, o = n.opts.Kernel.Normalized()
-		offset = drawgl.ColorValue(o)
+		weights, offset = n.opts.Kernel.Normalized()
 	} else {
 		weights = n.opts.Kernel.Weights()
 	}
@@ -85,7 +83,7 @@ func (n Convolution) Process(wd graph.WalkData, buffers map[graph.ConnectorName]
 		var center drawgl.FloatColor
 		for cy := pt.Y - half; cy <= pt.Y+half; cy++ {
 			for cx := pt.X - half; cx <= pt.X+half; cx++ {
-				coeff := drawgl.ColorValue(weights[l-((cy-pt.Y+half)*size+cx-pt.X+half)-1])
+				coeff := weights[l-((cy-pt.Y+half)*size+cx-pt.X+half)-1]
 
 				mx := cx
 				my := cy
