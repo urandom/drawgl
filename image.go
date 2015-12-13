@@ -8,8 +8,6 @@ import (
 	"sync"
 )
 
-type Channel int
-
 type RectangleIterator interface {
 	// Iterate iterates over the image buffer, calling the fn function for each
 	// point. The cycle order is row -> column. Implementations must ensure
@@ -33,34 +31,6 @@ type FloatImage struct {
 	Stride int
 	// Rect is the image's bounds.
 	Rect image.Rectangle
-}
-
-type Mask struct {
-	Image image.Image
-	Rect  image.Rectangle
-
-	hasImage bool
-	hasRect  bool
-}
-
-const (
-	RGB Channel = iota
-	Red         = 1 << iota
-	Green
-	Blue
-	Alpha
-
-	m = 1<<16 - 1
-)
-
-func (c *Channel) Normalize() {
-	if *c == RGB {
-		*c = Red | Green | Blue
-	}
-}
-
-func (c Channel) Is(o Channel) bool {
-	return c&o == o
 }
 
 func DefaultRectangleIterator(rect image.Rectangle, forceLinear ...bool) RectangleIterator {
@@ -295,11 +265,6 @@ func NewFloatImage(r image.Rectangle) *FloatImage {
 	return &FloatImage{pix, 4 * w, r}
 }
 
-func NewMask(image image.Image, rect image.Rectangle) Mask {
-	return Mask{Image: image, Rect: rect, hasImage: image != nil, hasRect: !rect.Empty()}
-
-}
-
 func ConvertImage(img image.Image) *FloatImage {
 	if d, ok := img.(*FloatImage); ok {
 		return d
@@ -319,98 +284,4 @@ func CopyImage(img *FloatImage) *FloatImage {
 	copy(cp.Pix, img.Pix)
 
 	return cp
-}
-
-func MaskFactor(pt image.Point, mask Mask) (factor float32) {
-	if mask.hasRect && !pt.In(mask.Rect) {
-		return 0
-	}
-
-	if mask.hasImage {
-		_, _, _, ma := mask.Image.At(pt.X, pt.Y).RGBA()
-
-		return float32(ma) / float32(m)
-	}
-
-	return 1
-}
-
-func MaskColor(dst FloatColor, src FloatColor, c Channel, f float32, op draw.Op) FloatColor {
-	fv := ColorValue(f)
-	switch op {
-	case draw.Over:
-		switch fv {
-		case 0:
-		case 1:
-			if c.Is(Red) {
-				dst.R = src.R
-			}
-			if c.Is(Green) {
-				dst.G = src.G
-			}
-			if c.Is(Blue) {
-				dst.B = src.B
-			}
-			if c.Is(Alpha) {
-				dst.A = src.A
-			}
-		default:
-			if c.Is(Red) {
-				dst.R = dst.R/fv + src.R*fv
-			}
-			if c.Is(Green) {
-				dst.G = dst.G/fv + src.G*fv
-			}
-			if c.Is(Blue) {
-				dst.B = dst.B/fv + src.B*fv
-			}
-			if c.Is(Alpha) {
-				dst.A = dst.A/fv + src.A*fv
-			}
-		}
-	case draw.Src:
-		switch fv {
-		case 0:
-			if c.Is(Red) {
-				dst.R = 0
-			}
-			if c.Is(Green) {
-				dst.G = 0
-			}
-			if c.Is(Blue) {
-				dst.B = 0
-			}
-			if c.Is(Alpha) {
-				dst.A = 0
-			}
-		case 1:
-			if c.Is(Red) {
-				dst.R = src.R
-			}
-			if c.Is(Green) {
-				dst.G = src.G
-			}
-			if c.Is(Blue) {
-				dst.B = src.B
-			}
-			if c.Is(Alpha) {
-				dst.A = src.A
-			}
-		default:
-			if c.Is(Red) {
-				dst.R = src.R * fv
-			}
-			if c.Is(Green) {
-				dst.G = src.G * fv
-			}
-			if c.Is(Blue) {
-				dst.B = src.B * fv
-			}
-			if c.Is(Alpha) {
-				dst.A = src.A * fv
-			}
-		}
-	}
-
-	return dst
 }

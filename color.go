@@ -8,8 +8,20 @@ type FloatColor struct {
 	R, G, B, A ColorValue
 }
 
+type Channel int
+
 const (
 	maxColor = 0xffff
+)
+
+const (
+	RGB Channel = iota
+	Red         = 1 << iota
+	Green
+	Blue
+	Alpha
+
+	m = 1<<16 - 1
 )
 
 var (
@@ -41,4 +53,14 @@ func floatColorModel(c color.Color) color.Color {
 	r, g, b, a := c.RGBA()
 	return FloatColor{ColorValue(r) / maxColor, ColorValue(g) / maxColor,
 		ColorValue(b) / maxColor, ColorValue(a) / maxColor}
+}
+
+func (c *Channel) Normalize() {
+	if *c == RGB {
+		*c = Red | Green | Blue
+	}
+}
+
+func (c Channel) Is(o Channel) bool {
+	return c&o == o
 }

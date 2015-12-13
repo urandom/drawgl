@@ -77,13 +77,7 @@ func (n BoxBlur) Process(wd graph.WalkData, buffers map[graph.ConnectorName]draw
 		var center drawgl.FloatColor
 		if pt.X == b.Min.X {
 			for cx := pt.X - n.opts.Radius; cx <= pt.X+n.opts.Radius; cx++ {
-				mx := cx
-
-				if mx < b.Min.X {
-					mx = b.Min.X
-				} else if mx >= b.Max.X {
-					mx = b.Max.X - 1
-				}
+				mx, _ := drawgl.TranslateCoords(cx, pt.Y, b, drawgl.Extend)
 
 				c := src.UnsafeFloatAt(mx, pt.Y)
 				if mx == pt.X {
@@ -154,13 +148,7 @@ func (n BoxBlur) Process(wd graph.WalkData, buffers map[graph.ConnectorName]draw
 		var center drawgl.FloatColor
 		if pt.Y == b.Min.Y {
 			for cy := pt.Y - n.opts.Radius; cy <= pt.Y+n.opts.Radius; cy++ {
-				my := cy
-
-				if my < b.Min.Y {
-					my = b.Min.Y
-				} else if my >= b.Max.Y {
-					my = b.Max.Y - 1
-				}
+				_, my := drawgl.TranslateCoords(pt.X, cy, b, drawgl.Extend)
 
 				c := src.UnsafeFloatAt(pt.X, my)
 				if my == pt.Y {
