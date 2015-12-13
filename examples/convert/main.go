@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"image/jpeg"
 	"os"
 
 	"github.com/urandom/drawgl"
@@ -21,7 +22,7 @@ func main() {
 
 	load, err := io.NewLoadLinker(io.LoadOptions{Path: os.Args[1]})
 	exitWithError(err)
-	save, err := io.NewSaveLinker(io.SaveOptions{Path: out})
+	save, err := io.NewSaveLinker(io.SaveOptions{Path: out, JpegOptions: &jpeg.Options{Quality: 100}})
 	exitWithError(err)
 	exif := io.NewCopyExifLinker(io.CopyExifOptions{})
 

@@ -2,6 +2,7 @@ package io
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"syscall"
 
@@ -61,7 +62,8 @@ func (n CopyExif) Process(wd graph.WalkData, buffers map[graph.ConnectorName]dra
 	}
 
 	if s, ok := res.Meta[InputFormat].(string); !ok || s != "jpeg" {
-		err = fmt.Errorf("input format is not supported")
+		fmt.Fprintln(os.Stderr, "CopyExif: input format is not supported")
+		// err = fmt.Errorf("input format is not supported")
 		return
 	}
 
@@ -77,7 +79,8 @@ func (n CopyExif) Process(wd graph.WalkData, buffers map[graph.ConnectorName]dra
 	}
 
 	if s, ok := res.Meta[OutputFormat].(string); !ok || s != "jpeg" {
-		err = fmt.Errorf("output format is not supported")
+		fmt.Fprintln(os.Stderr, "CopyExif: output format is not supported")
+		// err = fmt.Errorf("output format is not supported")
 		return
 	}
 
