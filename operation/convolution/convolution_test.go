@@ -6,7 +6,6 @@ import (
 	"github.com/urandom/drawgl"
 	"github.com/urandom/drawgl/operation/convolution"
 	"github.com/urandom/drawgl/operation/tests"
-	"github.com/urandom/graph"
 )
 
 func TestConvolution(t *testing.T) {
@@ -21,7 +20,7 @@ func TestConvolution(t *testing.T) {
 		t.Fatalf("Error creating a convolution linker: %v\n", err)
 	}
 
-	buffers := getImageBuffers(t)
+	buffers := tests.ImageBuffers(t)
 	p, wd, output := tests.PrepareLinker(l)
 
 	go p.Process(wd, buffers, output)
@@ -55,7 +54,7 @@ func TestNormalizedConvolution(t *testing.T) {
 		t.Fatalf("Error creating a convolution linker: %v\n", err)
 	}
 
-	buffers := getImageBuffers(t)
+	buffers := tests.ImageBuffers(t)
 	p, wd, output := tests.PrepareLinker(l)
 
 	go p.Process(wd, buffers, output)
@@ -147,15 +146,4 @@ func expectedNormalizedResult1() (c [4][4]drawgl.FloatColor) {
 	}
 
 	return
-}
-
-func getImageBuffers(t *testing.T) map[graph.ConnectorName]drawgl.Result {
-	img, err := tests.ReadTestData()
-	if err != nil {
-		t.Fatalf("Error reading test image: %v\n", err)
-	}
-
-	return map[graph.ConnectorName]drawgl.Result{
-		graph.InputName: drawgl.Result{Buffer: img},
-	}
 }

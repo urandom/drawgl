@@ -66,6 +66,7 @@ func (n BoxBlur) Process(wd graph.WalkData, buffers map[graph.ConnectorName]draw
 	b := buf.Bounds()
 
 	it := drawgl.DefaultRectangleIterator(b, n.opts.Linear)
+	// it := drawgl.LinearRectangleIterator(b)
 
 	it.Iterate(n.opts.Mask, func(pt image.Point, f float32) {
 		if f == 0 {

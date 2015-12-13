@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"testing"
 
 	"github.com/urandom/drawgl"
 	"github.com/urandom/drawgl/operation/io"
@@ -79,4 +80,15 @@ func ReadTestData() (*drawgl.FloatImage, error) {
 	}
 
 	return r.Buffer, nil
+}
+
+func ImageBuffers(t *testing.T) map[graph.ConnectorName]drawgl.Result {
+	img, err := ReadTestData()
+	if err != nil {
+		t.Fatalf("Error reading test image: %v\n", err)
+	}
+
+	return map[graph.ConnectorName]drawgl.Result{
+		graph.InputName: drawgl.Result{Buffer: img},
+	}
 }
