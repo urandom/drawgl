@@ -66,7 +66,8 @@ func (n BoxBlur) Process(wd graph.WalkData, buffers map[graph.ConnectorName]draw
 	b := buf.Bounds()
 
 	it := drawgl.DefaultRectangleIterator(b, n.opts.Linear)
-	// it := drawgl.LinearRectangleIterator(b)
+
+	edgeHandler := drawgl.Extend
 
 	it.Iterate(n.opts.Mask, func(pt image.Point, f float32) {
 		if f == 0 {
@@ -77,7 +78,7 @@ func (n BoxBlur) Process(wd graph.WalkData, buffers map[graph.ConnectorName]draw
 		var center drawgl.FloatColor
 		if pt.X == b.Min.X {
 			for cx := pt.X - n.opts.Radius; cx <= pt.X+n.opts.Radius; cx++ {
-				mx, _ := drawgl.TranslateCoords(cx, pt.Y, b, drawgl.Extend)
+				mx, _ := drawgl.TranslateCoords(cx, pt.Y, b, edgeHandler)
 
 				c := src.UnsafeFloatAt(mx, pt.Y)
 				if mx == pt.X {
@@ -101,17 +102,11 @@ func (n BoxBlur) Process(wd graph.WalkData, buffers map[graph.ConnectorName]draw
 			center = src.UnsafeFloatAt(pt.X, pt.Y)
 			prev := buf.UnsafeFloatAt(pt.X-1, pt.Y)
 
-			var leftmost, rightmost drawgl.FloatColor
-			if pt.X-n.opts.Radius < b.Min.X {
-				leftmost = src.UnsafeFloatAt(b.Min.X, pt.Y)
-			} else {
-				leftmost = src.UnsafeFloatAt(pt.X-n.opts.Radius, pt.Y)
-			}
-			if pt.X+n.opts.Radius > b.Max.X-1 {
-				rightmost = src.UnsafeFloatAt(b.Max.X-1, pt.Y)
-			} else {
-				rightmost = src.UnsafeFloatAt(pt.X+n.opts.Radius, pt.Y)
-			}
+			mx, _ := drawgl.TranslateCoords(pt.X-n.opts.Radius, pt.Y, b, edgeHandler)
+			leftmost := src.UnsafeFloatAt(mx, pt.Y)
+
+			mx, _ = drawgl.TranslateCoords(pt.X+n.opts.Radius, pt.Y, b, edgeHandler)
+			rightmost := src.UnsafeFloatAt(mx, pt.Y)
 
 			if n.opts.Channel.Is(drawgl.Red) {
 				rsum += prev.R - coeff*leftmost.R + coeff*rightmost.R
@@ -148,7 +143,7 @@ func (n BoxBlur) Process(wd graph.WalkData, buffers map[graph.ConnectorName]draw
 		var center drawgl.FloatColor
 		if pt.Y == b.Min.Y {
 			for cy := pt.Y - n.opts.Radius; cy <= pt.Y+n.opts.Radius; cy++ {
-				_, my := drawgl.TranslateCoords(pt.X, cy, b, drawgl.Extend)
+				_, my := drawgl.TranslateCoords(pt.X, cy, b, edgeHandler)
 
 				c := src.UnsafeFloatAt(pt.X, my)
 				if my == pt.Y {
@@ -172,17 +167,11 @@ func (n BoxBlur) Process(wd graph.WalkData, buffers map[graph.ConnectorName]draw
 			center = src.UnsafeFloatAt(pt.X, pt.Y)
 			prev := buf.UnsafeFloatAt(pt.X, pt.Y-1)
 
-			var leftmost, rightmost drawgl.FloatColor
-			if pt.Y-n.opts.Radius < b.Min.Y {
-				leftmost = src.UnsafeFloatAt(pt.X, b.Min.Y)
-			} else {
-				leftmost = src.UnsafeFloatAt(pt.X, pt.Y-n.opts.Radius)
-			}
-			if pt.Y+n.opts.Radius > b.Max.Y-1 {
-				rightmost = src.UnsafeFloatAt(pt.X, b.Max.Y-1)
-			} else {
-				rightmost = src.UnsafeFloatAt(pt.X, pt.Y+n.opts.Radius)
-			}
+			_, my := drawgl.TranslateCoords(pt.X-n.opts.Radius, pt.Y, b, edgeHandler)
+			leftmost := src.UnsafeFloatAt(pt.X, my)
+
+			_, my = drawgl.TranslateCoords(pt.X+n.opts.Radius, pt.Y, b, edgeHandler)
+			rightmost := src.UnsafeFloatAt(pt.X, my)
 
 			if n.opts.Channel.Is(drawgl.Red) {
 				rsum += prev.R - coeff*leftmost.R + coeff*rightmost.R
