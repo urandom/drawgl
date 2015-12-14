@@ -79,8 +79,7 @@ func (n Convolution) Process(wd graph.WalkData, buffers map[graph.ConnectorName]
 			return
 		}
 
-		var rsum, gsum, bsum, asum drawgl.ColorValue
-		var center drawgl.FloatColor
+		var center, acc drawgl.FloatColor
 		for cy := pt.Y - half; cy <= pt.Y+half; cy++ {
 			for cx := pt.X - half; cx <= pt.X+half; cx++ {
 				coeff := weights[l-((cy-pt.Y+half)*size+cx-pt.X+half)-1]
@@ -92,29 +91,34 @@ func (n Convolution) Process(wd graph.WalkData, buffers map[graph.ConnectorName]
 					center = c
 				}
 
-				if n.opts.Channel.Is(drawgl.Red) {
-					rsum += coeff * c.R
-				}
-				if n.opts.Channel.Is(drawgl.Green) {
-					gsum += coeff * c.G
-				}
-				if n.opts.Channel.Is(drawgl.Blue) {
-					bsum += coeff * c.B
-				}
-				if n.opts.Channel.Is(drawgl.Alpha) {
-					asum += coeff * c.A
-				}
+				acc = ColorAccumulator(acc, c, drawgl.FloatColor{}, coeff, n.opts.Channel)
 			}
 		}
 
 		cs := drawgl.FloatColor{
-			R: rsum + offset,
-			G: gsum + offset,
-			B: bsum + offset,
-			A: asum + offset,
+			R: acc.R + offset,
+			G: acc.G + offset,
+			B: acc.B + offset,
+			A: acc.A + offset,
 		}
 
 		buf.UnsafeSetColor(pt.X, pt.Y,
 			drawgl.MaskColor(center, cs, n.opts.Channel, f, draw.Over))
 	})
+}
+
+func ColorAccumulator(acc, add, sub drawgl.FloatColor, coeff drawgl.ColorValue, channel drawgl.Channel) drawgl.FloatColor {
+	if channel.Is(drawgl.Red) {
+		acc.R += coeff*add.R - coeff*sub.R
+	}
+	if channel.Is(drawgl.Green) {
+		acc.G += coeff*add.G - coeff*sub.G
+	}
+	if channel.Is(drawgl.Blue) {
+		acc.B += coeff*add.B - coeff*sub.B
+	}
+	if channel.Is(drawgl.Alpha) {
+		acc.A += coeff*add.A - coeff*sub.A
+	}
+	return acc
 }

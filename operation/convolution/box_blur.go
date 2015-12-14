@@ -74,8 +74,7 @@ func (n BoxBlur) Process(wd graph.WalkData, buffers map[graph.ConnectorName]draw
 			return
 		}
 
-		var rsum, gsum, bsum, asum drawgl.ColorValue
-		var center drawgl.FloatColor
+		var center, acc drawgl.FloatColor
 		if pt.X == b.Min.X {
 			for cx := pt.X - n.opts.Radius; cx <= pt.X+n.opts.Radius; cx++ {
 				mx, _ := drawgl.TranslateCoords(cx, pt.Y, b, edgeHandler)
@@ -85,18 +84,7 @@ func (n BoxBlur) Process(wd graph.WalkData, buffers map[graph.ConnectorName]draw
 					center = c
 				}
 
-				if n.opts.Channel.Is(drawgl.Red) {
-					rsum += coeff * c.R
-				}
-				if n.opts.Channel.Is(drawgl.Green) {
-					gsum += coeff * c.G
-				}
-				if n.opts.Channel.Is(drawgl.Blue) {
-					bsum += coeff * c.B
-				}
-				if n.opts.Channel.Is(drawgl.Alpha) {
-					asum += coeff * c.A
-				}
+				acc = ColorAccumulator(acc, c, drawgl.FloatColor{}, coeff, n.opts.Channel)
 			}
 		} else {
 			center = src.UnsafeFloatAt(pt.X, pt.Y)
@@ -108,29 +96,11 @@ func (n BoxBlur) Process(wd graph.WalkData, buffers map[graph.ConnectorName]draw
 			mx, _ = drawgl.TranslateCoords(pt.X+n.opts.Radius, pt.Y, b, edgeHandler)
 			rightmost := src.UnsafeFloatAt(mx, pt.Y)
 
-			if n.opts.Channel.Is(drawgl.Red) {
-				rsum += prev.R - coeff*leftmost.R + coeff*rightmost.R
-			}
-			if n.opts.Channel.Is(drawgl.Green) {
-				gsum += prev.G - coeff*leftmost.G + coeff*rightmost.G
-			}
-			if n.opts.Channel.Is(drawgl.Blue) {
-				bsum += prev.B - coeff*leftmost.B + coeff*rightmost.B
-			}
-			if n.opts.Channel.Is(drawgl.Alpha) {
-				asum += prev.A - coeff*leftmost.A + coeff*rightmost.A
-			}
-		}
-
-		cs := drawgl.FloatColor{
-			R: rsum,
-			G: gsum,
-			B: bsum,
-			A: asum,
+			acc = ColorAccumulator(prev, rightmost, leftmost, coeff, n.opts.Channel)
 		}
 
 		buf.UnsafeSetColor(pt.X, pt.Y,
-			drawgl.MaskColor(center, cs, n.opts.Channel, f, draw.Over))
+			drawgl.MaskColor(center, acc, n.opts.Channel, f, draw.Over))
 	})
 
 	src = drawgl.CopyImage(buf)
@@ -139,8 +109,7 @@ func (n BoxBlur) Process(wd graph.WalkData, buffers map[graph.ConnectorName]draw
 			return
 		}
 
-		var rsum, gsum, bsum, asum drawgl.ColorValue
-		var center drawgl.FloatColor
+		var center, acc drawgl.FloatColor
 		if pt.Y == b.Min.Y {
 			for cy := pt.Y - n.opts.Radius; cy <= pt.Y+n.opts.Radius; cy++ {
 				_, my := drawgl.TranslateCoords(pt.X, cy, b, edgeHandler)
@@ -150,18 +119,7 @@ func (n BoxBlur) Process(wd graph.WalkData, buffers map[graph.ConnectorName]draw
 					center = c
 				}
 
-				if n.opts.Channel.Is(drawgl.Red) {
-					rsum += coeff * c.R
-				}
-				if n.opts.Channel.Is(drawgl.Green) {
-					gsum += coeff * c.G
-				}
-				if n.opts.Channel.Is(drawgl.Blue) {
-					bsum += coeff * c.B
-				}
-				if n.opts.Channel.Is(drawgl.Alpha) {
-					asum += coeff * c.A
-				}
+				acc = ColorAccumulator(acc, c, drawgl.FloatColor{}, coeff, n.opts.Channel)
 			}
 		} else {
 			center = src.UnsafeFloatAt(pt.X, pt.Y)
@@ -173,28 +131,10 @@ func (n BoxBlur) Process(wd graph.WalkData, buffers map[graph.ConnectorName]draw
 			_, my = drawgl.TranslateCoords(pt.X+n.opts.Radius, pt.Y, b, edgeHandler)
 			rightmost := src.UnsafeFloatAt(pt.X, my)
 
-			if n.opts.Channel.Is(drawgl.Red) {
-				rsum += prev.R - coeff*leftmost.R + coeff*rightmost.R
-			}
-			if n.opts.Channel.Is(drawgl.Green) {
-				gsum += prev.G - coeff*leftmost.G + coeff*rightmost.G
-			}
-			if n.opts.Channel.Is(drawgl.Blue) {
-				bsum += prev.B - coeff*leftmost.B + coeff*rightmost.B
-			}
-			if n.opts.Channel.Is(drawgl.Alpha) {
-				asum += prev.A - coeff*leftmost.A + coeff*rightmost.A
-			}
-		}
-
-		cs := drawgl.FloatColor{
-			R: rsum,
-			G: gsum,
-			B: bsum,
-			A: asum,
+			acc = ColorAccumulator(prev, rightmost, leftmost, coeff, n.opts.Channel)
 		}
 
 		buf.UnsafeSetColor(pt.X, pt.Y,
-			drawgl.MaskColor(center, cs, n.opts.Channel, f, draw.Over))
+			drawgl.MaskColor(center, acc, n.opts.Channel, f, draw.Over))
 	})
 }
