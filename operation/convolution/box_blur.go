@@ -90,7 +90,7 @@ func (n BoxBlur) Process(wd graph.WalkData, buffers map[graph.ConnectorName]draw
 			center = src.UnsafeFloatAt(pt.X, pt.Y)
 			prev := buf.UnsafeFloatAt(pt.X-1, pt.Y)
 
-			mx, _ := drawgl.TranslateCoords(pt.X-n.opts.Radius, pt.Y, b, edgeHandler)
+			mx, _ := drawgl.TranslateCoords(pt.X-n.opts.Radius-1, pt.Y, b, edgeHandler)
 			leftmost := src.UnsafeFloatAt(mx, pt.Y)
 
 			mx, _ = drawgl.TranslateCoords(pt.X+n.opts.Radius, pt.Y, b, edgeHandler)
@@ -125,10 +125,10 @@ func (n BoxBlur) Process(wd graph.WalkData, buffers map[graph.ConnectorName]draw
 			center = src.UnsafeFloatAt(pt.X, pt.Y)
 			prev := buf.UnsafeFloatAt(pt.X, pt.Y-1)
 
-			_, my := drawgl.TranslateCoords(pt.X-n.opts.Radius, pt.Y, b, edgeHandler)
+			_, my := drawgl.TranslateCoords(pt.X, pt.Y-n.opts.Radius-1, b, edgeHandler)
 			leftmost := src.UnsafeFloatAt(pt.X, my)
 
-			_, my = drawgl.TranslateCoords(pt.X+n.opts.Radius, pt.Y, b, edgeHandler)
+			_, my = drawgl.TranslateCoords(pt.X, pt.Y+n.opts.Radius, b, edgeHandler)
 			rightmost := src.UnsafeFloatAt(pt.X, my)
 
 			acc = ColorAccumulator(prev, rightmost, leftmost, coeff, n.opts.Channel)
