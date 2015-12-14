@@ -10,10 +10,11 @@ type Graph struct {
 }
 
 type Result struct {
-	Id     graph.Id
-	Buffer *FloatImage
-	Meta   Meta
-	Error  error
+	Id           graph.Id
+	Buffer       *FloatImage
+	NamedBuffers map[graph.ConnectorName]*FloatImage
+	Meta         Meta
+	Error        error
 }
 
 type Processor interface {
@@ -38,9 +39,13 @@ func (g Graph) Process(start graph.Linker) error {
 
 					for _, p := range wd.Parents {
 						r := resultSet[p.Node.Id()]
-						if p.From != graph.OutputName && r.Buffer != nil {
+						if p.From != graph.OutputName {
 							// If the image buffer comes from a secondary output, clone it
-							r.Buffer = CopyImage(r.Buffer)
+							if nb, ok := r.NamedBuffers[p.From]; ok && nb != nil {
+								r.Buffer = CopyImage(nb)
+							} else if r.Buffer != nil {
+								r.Buffer = CopyImage(r.Buffer)
+							}
 						}
 						r.Meta = copyMeta(r.Meta)
 						pb[p.To] = r
