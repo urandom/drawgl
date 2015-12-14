@@ -90,5 +90,5 @@ func (n Scale) Process(wd graph.WalkData, buffers map[graph.ConnectorName]drawgl
 
 	buf = drawgl.NewFloatImage(dr)
 
-	n.interpolator.Scale(buf, dr, src, b, draw.Over, nil)
+	n.interpolator.Scale(buf, dr, src, b, draw.Src, nil)
 }
