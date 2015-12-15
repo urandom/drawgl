@@ -1,7 +1,6 @@
 package transform
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/urandom/drawgl"
@@ -19,29 +18,14 @@ type Scale struct {
 
 type ScaleOptions struct {
 	Width, Height int
-	Interpolator  string
+	Interpolator  InterpolatorOp
 }
 
 func NewScaleLinker(opts ScaleOptions) (graph.Linker, error) {
-	var interpolator draw.Interpolator
+	interpolator, err := opts.Interpolator.Inst()
 
-	if opts.Interpolator == "" {
-		interpolator = draw.ApproxBiLinear
-	} else {
-		switch opts.Interpolator {
-		case "NearestNeighbor":
-			interpolator = draw.NearestNeighbor
-		case "ApproxBiLinear":
-			interpolator = draw.ApproxBiLinear
-		case "BiLinear":
-			interpolator = draw.BiLinear
-		case "CatmullRom":
-			interpolator = draw.CatmullRom
-		case "Lanczos":
-			interpolator = Lanczos
-		default:
-			return nil, errors.New("Unknown interpolator: " + opts.Interpolator)
-		}
+	if err != nil {
+		return nil, err
 	}
 
 	if opts.Width <= 0 {
