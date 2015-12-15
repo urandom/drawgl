@@ -7,6 +7,10 @@ import (
 )
 
 var (
+	// TODO
+	// Custom NearestNeighbor and ApproxBiLinear interpolators that implement
+	// faster scale paths for the internal FloatImage type
+
 	Lanczos = &draw.Kernel{3, func(t float64) float64 {
 		if t < 0 {
 			t = -t
