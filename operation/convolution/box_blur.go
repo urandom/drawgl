@@ -1,6 +1,7 @@
 package convolution
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"image"
@@ -136,5 +137,17 @@ func (n BoxBlur) Process(wd graph.WalkData, buffers map[graph.ConnectorName]draw
 
 		buf.UnsafeSetColor(pt.X, pt.Y,
 			drawgl.MaskColor(center, acc, n.opts.Channel, f, draw.Over))
+	})
+}
+
+func init() {
+	drawgl.RegisterOperation("BoxBlur", func(opts json.RawMessage) (graph.Linker, error) {
+		var o BoxBlurOptions
+
+		if err := json.Unmarshal([]byte(opts), &o); err != nil {
+			return nil, fmt.Errorf("constructing BoxBlur: %v", err)
+		}
+
+		return NewBoxBlurLinker(o)
 	})
 }

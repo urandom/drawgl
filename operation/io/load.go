@@ -1,6 +1,7 @@
 package io
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"image"
@@ -70,4 +71,16 @@ func (n Load) Process(wd graph.WalkData, buffers map[graph.ConnectorName]drawgl.
 	if err == nil {
 		res.Buffer = drawgl.ConvertImage(img)
 	}
+}
+
+func init() {
+	drawgl.RegisterOperation("Load", func(opts json.RawMessage) (graph.Linker, error) {
+		var o LoadOptions
+
+		if err := json.Unmarshal([]byte(opts), &o); err != nil {
+			return nil, fmt.Errorf("constructing Load: %v", err)
+		}
+
+		return NewLoadLinker(o)
+	})
 }

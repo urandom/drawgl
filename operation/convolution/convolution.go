@@ -1,6 +1,7 @@
 package convolution
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"image"
@@ -121,4 +122,16 @@ func ColorAccumulator(acc, add, sub drawgl.FloatColor, coeff drawgl.ColorValue, 
 		acc.A += coeff*add.A - coeff*sub.A
 	}
 	return acc
+}
+
+func init() {
+	drawgl.RegisterOperation("Convolution", func(opts json.RawMessage) (graph.Linker, error) {
+		var o ConvolutionOptions
+
+		if err := json.Unmarshal([]byte(opts), &o); err != nil {
+			return nil, fmt.Errorf("constructing Convolution: %v", err)
+		}
+
+		return NewConvolutionLinker(o)
+	})
 }

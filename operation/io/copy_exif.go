@@ -1,6 +1,7 @@
 package io
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -115,4 +116,16 @@ func (n CopyExif) Process(wd graph.WalkData, buffers map[graph.ConnectorName]dra
 			}
 		}
 	}
+}
+
+func init() {
+	drawgl.RegisterOperation("CopyExif", func(opts json.RawMessage) (graph.Linker, error) {
+		var o CopyExifOptions
+
+		if err := json.Unmarshal([]byte(opts), &o); err != nil {
+			return nil, fmt.Errorf("constructing CopyExif: %v", err)
+		}
+
+		return NewCopyExifLinker(o)
+	})
 }

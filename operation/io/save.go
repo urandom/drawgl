@@ -1,6 +1,7 @@
 package io
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -98,4 +99,16 @@ func (n Save) Process(wd graph.WalkData, buffers map[graph.ConnectorName]drawgl.
 			err = fmt.Errorf("unknown format %s", kind)
 		}
 	}
+}
+
+func init() {
+	drawgl.RegisterOperation("Save", func(opts json.RawMessage) (graph.Linker, error) {
+		var o SaveOptions
+
+		if err := json.Unmarshal([]byte(opts), &o); err != nil {
+			return nil, fmt.Errorf("constructing Save: %v", err)
+		}
+
+		return NewSaveLinker(o)
+	})
 }

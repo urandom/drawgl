@@ -1,6 +1,7 @@
 package transform
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/urandom/drawgl"
@@ -75,4 +76,16 @@ func (n Scale) Process(wd graph.WalkData, buffers map[graph.ConnectorName]drawgl
 	buf = drawgl.NewFloatImage(dr)
 
 	n.interpolator.Scale(buf, dr, src, b, draw.Src, nil)
+}
+
+func init() {
+	drawgl.RegisterOperation("Scale", func(opts json.RawMessage) (graph.Linker, error) {
+		var o ScaleOptions
+
+		if err := json.Unmarshal([]byte(opts), &o); err != nil {
+			return nil, fmt.Errorf("constructing Scale: %v", err)
+		}
+
+		return NewScaleLinker(o)
+	})
 }
