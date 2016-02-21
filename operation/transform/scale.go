@@ -79,13 +79,13 @@ func (n Scale) Process(wd graph.WalkData, buffers map[graph.ConnectorName]drawgl
 }
 
 func init() {
-	drawgl.RegisterOperation("Scale", func(opts json.RawMessage) (graph.Linker, error) {
+	graph.RegisterLinker("Scale", func(opts json.RawMessage) (graph.Linker, error) {
 		var o ScaleOptions
 
 		if err := json.Unmarshal([]byte(opts), &o); err != nil {
 			return nil, fmt.Errorf("constructing Scale: %v", err)
 		}
 
-		return NewScaleLinker(o)
+		return NewScaleLinker(o), nil
 	})
 }

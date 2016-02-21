@@ -125,13 +125,13 @@ func ColorAccumulator(acc, add, sub drawgl.FloatColor, coeff drawgl.ColorValue, 
 }
 
 func init() {
-	drawgl.RegisterOperation("Convolution", func(opts json.RawMessage) (graph.Linker, error) {
+	graph.RegisterLinker("Convolution", func(opts json.RawMessage) (graph.Linker, error) {
 		var o ConvolutionOptions
 
 		if err := json.Unmarshal([]byte(opts), &o); err != nil {
 			return nil, fmt.Errorf("constructing Convolution: %v", err)
 		}
 
-		return NewConvolutionLinker(o)
+		return NewConvolutionLinker(o), nil
 	})
 }

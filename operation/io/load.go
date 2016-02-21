@@ -74,13 +74,13 @@ func (n Load) Process(wd graph.WalkData, buffers map[graph.ConnectorName]drawgl.
 }
 
 func init() {
-	drawgl.RegisterOperation("Load", func(opts json.RawMessage) (graph.Linker, error) {
+	graph.RegisterLinker("Load", func(opts json.RawMessage) (graph.Linker, error) {
 		var o LoadOptions
 
 		if err := json.Unmarshal([]byte(opts), &o); err != nil {
 			return nil, fmt.Errorf("constructing Load: %v", err)
 		}
 
-		return NewLoadLinker(o)
+		return NewLoadLinker(o), nil
 	})
 }

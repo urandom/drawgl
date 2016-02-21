@@ -102,13 +102,13 @@ func (n Save) Process(wd graph.WalkData, buffers map[graph.ConnectorName]drawgl.
 }
 
 func init() {
-	drawgl.RegisterOperation("Save", func(opts json.RawMessage) (graph.Linker, error) {
+	graph.RegisterLinker("Save", func(opts json.RawMessage) (graph.Linker, error) {
 		var o SaveOptions
 
 		if err := json.Unmarshal([]byte(opts), &o); err != nil {
 			return nil, fmt.Errorf("constructing Save: %v", err)
 		}
 
-		return NewSaveLinker(o)
+		return NewSaveLinker(o), nil
 	})
 }

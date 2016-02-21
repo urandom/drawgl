@@ -141,13 +141,13 @@ func (n BoxBlur) Process(wd graph.WalkData, buffers map[graph.ConnectorName]draw
 }
 
 func init() {
-	drawgl.RegisterOperation("BoxBlur", func(opts json.RawMessage) (graph.Linker, error) {
+	graph.RegisterLinker("BoxBlur", func(opts json.RawMessage) (graph.Linker, error) {
 		var o BoxBlurOptions
 
 		if err := json.Unmarshal([]byte(opts), &o); err != nil {
 			return nil, fmt.Errorf("constructing BoxBlur: %v", err)
 		}
 
-		return NewBoxBlurLinker(o)
+		return NewBoxBlurLinker(o), nil
 	})
 }
