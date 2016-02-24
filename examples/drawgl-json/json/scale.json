@@ -5,9 +5,14 @@
 	},
 	"Outputs": {
 		"Output": {
-			"Name": "BoxBlur",
+			"Name": "Scale",
 			"Options": {
-				"Radius": {{ if gt (len .Args) 2 -}} {{ index .Args 2 }} {{- else -}} 40 {{- end }}
+				"Width": {{ if gt (len .Args) 2 -}} {{ index .Args 2 }} {{- else -}} 640 {{- end }},
+				"Height": {{ if gt (len .Args) 3 -}} {{ index .Args 3 }} {{- else -}} 0 {{- end }}
+				{{- if gt (len .Args) 4 -}},
+				"Interpolator": "{{ index .Args 4 }}"
+				{{- end }}
+
 			},
 			"Outputs": {
 				"Output": {

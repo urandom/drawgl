@@ -29,12 +29,8 @@ func NewScaleLinker(opts ScaleOptions) (graph.Linker, error) {
 		return nil, err
 	}
 
-	if opts.Width <= 0 {
-		return nil, fmt.Errorf("Invalid width %f", opts.Width)
-	}
-
-	if opts.Height <= 0 {
-		return nil, fmt.Errorf("Invalid height %f", opts.Height)
+	if opts.Width <= 0 && opts.Height <= 0 {
+		return nil, fmt.Errorf("Invalid width %f and height %f, at least one has to be positive", opts.Width, opts.Height)
 	}
 
 	return base.NewLinkerNode(Scale{
@@ -70,8 +66,19 @@ func (n Scale) Process(wd graph.WalkData, buffers map[graph.ConnectorName]drawgl
 	b := src.Bounds()
 	dr := src.Bounds()
 
-	dr.Max.X = dr.Min.X + n.opts.Width
-	dr.Max.Y = dr.Min.Y + n.opts.Height
+	tW, tH := n.opts.Width, n.opts.Height
+	if tW <= 0 || tH <= 0 {
+		width, height := b.Max.X-b.Min.X, b.Max.Y-b.Min.Y
+
+		if tW <= 0 {
+			tW = tH * width / height
+		} else {
+			tH = tW * height / width
+		}
+	}
+
+	dr.Max.X = dr.Min.X + tW
+	dr.Max.Y = dr.Min.Y + tH
 
 	buf = drawgl.NewFloatImage(dr)
 
