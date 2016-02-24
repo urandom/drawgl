@@ -1,0 +1,22 @@
+{
+	"Name": "Load",
+	"Options": {
+		"Path": "{{ index .Args 0 }}"
+	},
+	"Outputs": {
+		"Output": {
+			"Name": "BoxBlur",
+			"Options": {
+				"Radius": 40
+			},
+			"Outputs": {
+				"Output": {
+					"Name": "Save",
+					"Options": {
+						"Path": "{{ if gt (len .Args) 1 -}} {{ index .Args 1 }} {{- else -}} /tmp/out.png {{- end }}"
+					}
+				}
+			}
+		}
+	}
+}
