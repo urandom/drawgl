@@ -8,11 +8,10 @@ import (
 	"os"
 	"runtime/pprof"
 
-	"github.com/urandom/graph"
 	"github.com/urandom/drawgl"
 	_ "github.com/urandom/drawgl/operation"
-	"github.com/urandom/drawgl/operation/convolution"
 	"github.com/urandom/drawgl/operation/io"
+	"github.com/urandom/graph"
 )
 
 var (
@@ -52,7 +51,7 @@ func main() {
 	var roots []graph.Linker
 
 	if len(args) > 0 {
-		roots, err = graph.ProcessJSON(jsonReader, &graph.JSONTemplateData(Args: args))
+		roots, err = graph.ProcessJSON(jsonReader, &graph.JSONTemplateData{Args: args})
 	} else {
 		roots, err = graph.ProcessJSON(jsonReader, nil)
 	}
