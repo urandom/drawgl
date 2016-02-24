@@ -132,6 +132,6 @@ func init() {
 			return nil, fmt.Errorf("constructing Convolution: %v", err)
 		}
 
-		return NewConvolutionLinker(o), nil
+		return NewConvolutionLinker(o)
 	})
 }

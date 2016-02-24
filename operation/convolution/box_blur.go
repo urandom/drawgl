@@ -148,6 +148,6 @@ func init() {
 			return nil, fmt.Errorf("constructing BoxBlur: %v", err)
 		}
 
-		return NewBoxBlurLinker(o), nil
+		return NewBoxBlurLinker(o)
 	})
 }

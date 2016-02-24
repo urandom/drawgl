@@ -81,6 +81,6 @@ func init() {
 			return nil, fmt.Errorf("constructing Load: %v", err)
 		}
 
-		return NewLoadLinker(o), nil
+		return NewLoadLinker(o)
 	})
 }

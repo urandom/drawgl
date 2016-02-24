@@ -86,6 +86,6 @@ func init() {
 			return nil, fmt.Errorf("constructing Scale: %v", err)
 		}
 
-		return NewScaleLinker(o), nil
+		return NewScaleLinker(o)
 	})
 }

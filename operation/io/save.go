@@ -109,6 +109,6 @@ func init() {
 			return nil, fmt.Errorf("constructing Save: %v", err)
 		}
 
-		return NewSaveLinker(o), nil
+		return NewSaveLinker(o)
 	})
 }
