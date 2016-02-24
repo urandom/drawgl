@@ -77,6 +77,6 @@ func main() {
 func exitWithError(err error) {
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		return
+		os.Exit(1)
 	}
 }

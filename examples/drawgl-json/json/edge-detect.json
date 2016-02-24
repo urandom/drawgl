@@ -1,0 +1,23 @@
+{
+	"Name": "Load",
+	"Options": {
+		"Path": "{{ index .Args 0 }}"
+	},
+	"Outputs": {
+		"Output": {
+			"Name": "Convolution",
+			"Options": {
+				"Kernel": [-1, -1, -1, -1, 8, -1, -1, -1, -1],
+				"Noralize": true
+			},
+			"Outputs": {
+				"Output": {
+					"Name": "Save",
+					"Options": {
+						"Path": "{{ if gt (len .Args) 1 -}} {{ index .Args 1 }} {{- else -}} /tmp/out.png {{- end }}"
+					}
+				}
+			}
+		}
+	}
+}
