@@ -4,19 +4,19 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"runtime/pprof"
 
 	"github.com/urandom/drawgl"
 	_ "github.com/urandom/drawgl/operation"
-	"github.com/urandom/drawgl/operation/io"
 	"github.com/urandom/graph"
 )
 
 var (
 	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
-	jsonfile   = flags.String("json", "-", "read graph definition from json file [defaults to standard input]")
+	jsonfile   = flag.String("json", "-", "read graph definition from json file [defaults to standard input]")
 )
 
 func main() {
