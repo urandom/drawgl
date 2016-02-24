@@ -23,14 +23,10 @@ var (
 	ApproxBiLinear  = ablInterpolator{}
 
 	Lanczos = &draw.Kernel{3, func(t float64) float64 {
-		if t < 0 {
-			t = -t
-		}
-
+		t = math.Abs(t)
 		if t < 3 {
-			return sinc(t) / sinc(t/3)
+			return sinc(t) * sinc(t/3)
 		}
-
 		return 0
 	}}
 )
