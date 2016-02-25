@@ -147,17 +147,17 @@ func transform(op TransformOp, src *drawgl.FloatImage, mask drawgl.Mask, channel
 		offsetX = dstB.Min.Y + srcB.Max.Y - 1
 		offsetY = dstB.Min.X + srcB.Max.X - 1
 	case transformRotate90:
-		offsetX = dstB.Min.X - srcB.Min.Y
-		offsetY = dstB.Min.Y + srcB.Max.X - 1
+		offsetX = dstB.Min.X + srcB.Max.Y - 1
+		offsetY = dstB.Min.Y - srcB.Min.X
 	case transformRotate180:
 		offsetX = dstB.Min.X + srcB.Max.X - 1
 		offsetY = dstB.Min.Y + srcB.Max.Y - 1
 	case transformRotate270:
-		offsetX = dstB.Min.X + srcB.Max.Y - 1
-		offsetY = dstB.Min.Y - srcB.Min.X
+		offsetX = dstB.Min.X - srcB.Min.Y
+		offsetY = dstB.Min.Y + srcB.Max.X - 1
 	}
 
-	dst = drawgl.NewFloatImage(srcB)
+	dst = drawgl.NewFloatImage(dstB)
 
 	it := drawgl.DefaultRectangleIterator(srcB, forceLinear)
 
@@ -178,15 +178,21 @@ func transform(op TransformOp, src *drawgl.FloatImage, mask drawgl.Mask, channel
 		case transformTransverse:
 			px, py = offsetX-pt.Y, offsetY-pt.X
 		case transformRotate90:
-			px, py = offsetX+pt.Y, offsetY-pt.X
+			px, py = offsetX-pt.Y, offsetY+pt.X
 		case transformRotate180:
 			px, py = offsetX-pt.X, offsetY-pt.Y
 		case transformRotate270:
-			px, py = offsetX-pt.Y, offsetY+pt.X
+			px, py = offsetX+pt.Y, offsetY-pt.X
 		}
 
 		srcColor := src.UnsafeFloatAt(pt.X, pt.Y)
-		dstColor := src.UnsafeFloatAt(px, py)
+
+		var dstColor drawgl.FloatColor
+		if srcB == dstB || (image.Point{px, py}.In(src.Rect)) {
+			dstColor = src.UnsafeFloatAt(px, py)
+		} else {
+			dstColor = drawgl.FloatColor{A: 1}
+		}
 
 		dst.UnsafeSetColor(px, py, drawgl.MaskColor(dstColor, srcColor, channel, f, draw.Over))
 	})
