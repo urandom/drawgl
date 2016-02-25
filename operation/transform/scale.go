@@ -30,7 +30,7 @@ func NewScaleLinker(opts ScaleOptions) (graph.Linker, error) {
 	}
 
 	if opts.Width <= 0 && opts.Height <= 0 {
-		return nil, fmt.Errorf("Invalid width %f and height %f, at least one has to be positive", opts.Width, opts.Height)
+		return nil, fmt.Errorf("invalid width %f and height %f, at least one has to be positive", opts.Width, opts.Height)
 	}
 
 	return base.NewLinkerNode(Scale{
@@ -48,7 +48,7 @@ func (n Scale) Process(wd graph.WalkData, buffers map[graph.ConnectorName]drawgl
 	defer func() {
 		res.Buffer = buf
 		if err != nil {
-			res.Error = fmt.Errorf("Error applying box blur using %v: %v", n.opts, err)
+			res.Error = fmt.Errorf("applying scale using %v: %v", n.opts, err)
 		}
 		output <- res
 

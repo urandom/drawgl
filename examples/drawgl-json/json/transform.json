@@ -1,0 +1,22 @@
+{
+	"Name": "Load",
+	"Options": {
+		"Path": "{{ index .Args 0 }}"
+	},
+	"Outputs": {
+		"Output": {
+			"Name": "Transform",
+			"Options": {
+				"Operator": "{{ if gt (len .Args) 2 -}} {{ index .Args 2 }} {{- else -}} flip-horizontal {{- end }}"
+			},
+			"Outputs": {
+				"Output": {
+					"Name": "Save",
+					"Options": {
+						"Path": "{{ if gt (len .Args) 1 -}} {{ index .Args 1 }} {{- else -}} /tmp/out.png {{- end }}"
+					}
+				}
+			}
+		}
+	}
+}

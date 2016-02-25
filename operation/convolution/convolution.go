@@ -28,7 +28,7 @@ type ConvolutionOptions struct {
 
 func NewConvolutionLinker(opts ConvolutionOptions) (graph.Linker, error) {
 	if opts.Kernel == nil || len(opts.Kernel.Weights()) == 0 {
-		return nil, errors.New("Empty kernel")
+		return nil, errors.New("empty kernel")
 	}
 
 	opts.Channel.Normalize()
@@ -44,7 +44,7 @@ func (n Convolution) Process(wd graph.WalkData, buffers map[graph.ConnectorName]
 	defer func() {
 		res.Buffer = buf
 		if err != nil {
-			res.Error = fmt.Errorf("Error applying convolution using %v: %v", n.opts, err)
+			res.Error = fmt.Errorf("applying convolution using %v: %v", n.opts, err)
 		}
 		output <- res
 
