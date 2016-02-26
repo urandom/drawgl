@@ -19,11 +19,6 @@ func TestScale(t *testing.T) {
 		t.Fatalf("Expected an error\n")
 	}
 
-	_, err = transform.NewScaleLinker(transform.ScaleOptions{Width: 100, Height: -50})
-	if err == nil {
-		t.Fatalf("Expected an error\n")
-	}
-
 	l, err := transform.NewScaleLinker(transform.ScaleOptions{Width: 2, Height: 2})
 	if err != nil {
 		t.Fatalf("Error creating a scale linker: %v\n", err)

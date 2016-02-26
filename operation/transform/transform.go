@@ -12,7 +12,7 @@ import (
 	"github.com/urandom/graph/base"
 )
 
-type TransformOp int
+type Operator int
 
 type Transform struct {
 	base.Node
@@ -21,27 +21,27 @@ type Transform struct {
 }
 
 type TransformOptions struct {
-	Operator TransformOp
+	Operator Operator
 	Channel  drawgl.Channel
 	Mask     drawgl.Mask
 	Linear   bool
 }
 
 const (
-	_                          = iota
-	transformFlipH TransformOp = iota
-	transformFlipV
+	_                      = iota
+	FlipHOperator Operator = iota
+	FlipVOperator
 	// FlipH + Rotate270
-	transformTranspose
+	TransposeOperator
 	// FlipV + Rotate270
-	transformTransverse
-	transformRotate90
-	transformRotate180
-	transformRotate270
+	TransverseOperator
+	Rotate90Operator
+	Rotate180Operator
+	Rotate270Operator
 )
 
 func NewTransformLinker(opts TransformOptions) (graph.Linker, error) {
-	if opts.Operator == 0 || opts.Operator > transformRotate270 {
+	if opts.Operator == 0 || opts.Operator > Rotate270Operator {
 		return nil, fmt.Errorf("unknown operator %d", opts.Operator)
 	}
 
@@ -79,44 +79,44 @@ func (n Transform) Process(wd graph.WalkData, buffers map[graph.ConnectorName]dr
 	buf = transform(n.opts.Operator, src, n.opts.Mask, n.opts.Channel, n.opts.Linear)
 }
 
-func (o TransformOp) MarshalJSON() (b []byte, err error) {
+func (o Operator) MarshalJSON() (b []byte, err error) {
 	switch o {
-	case transformFlipH:
+	case FlipHOperator:
 		b = []byte(`"flip-horizontal"`)
-	case transformFlipV:
+	case FlipVOperator:
 		b = []byte(`"flip-vertical"`)
-	case transformTranspose:
+	case TransposeOperator:
 		b = []byte(`"transpose"`)
-	case transformTransverse:
+	case TransverseOperator:
 		b = []byte(`"transverse"`)
-	case transformRotate90:
+	case Rotate90Operator:
 		b = []byte(`"rotate-90"`)
-	case transformRotate180:
+	case Rotate180Operator:
 		b = []byte(`"rotate-180"`)
-	case transformRotate270:
+	case Rotate270Operator:
 		b = []byte(`"rotate-270"`)
 	}
 	return
 }
 
-func (o *TransformOp) UnmarshalJSON(b []byte) (err error) {
+func (o *Operator) UnmarshalJSON(b []byte) (err error) {
 	var val string
 	if err = json.Unmarshal(b, &val); err == nil {
 		switch val {
 		case "flip-horizontal":
-			*o = transformFlipH
+			*o = FlipHOperator
 		case "flip-vertical":
-			*o = transformFlipV
+			*o = FlipVOperator
 		case "transpose":
-			*o = transformTranspose
+			*o = TransposeOperator
 		case "transverse":
-			*o = transformTransverse
+			*o = TransverseOperator
 		case "rotate-90":
-			*o = transformRotate90
+			*o = Rotate90Operator
 		case "rotate-180":
-			*o = transformRotate180
+			*o = Rotate180Operator
 		case "rotate-270":
-			*o = transformRotate270
+			*o = Rotate270Operator
 		default:
 			err = errors.New("unknown transform operator " + val)
 		}
@@ -124,35 +124,35 @@ func (o *TransformOp) UnmarshalJSON(b []byte) (err error) {
 	return
 }
 
-func transform(op TransformOp, src *drawgl.FloatImage, mask drawgl.Mask, channel drawgl.Channel, forceLinear bool) (dst *drawgl.FloatImage) {
+func transform(op Operator, src *drawgl.FloatImage, mask drawgl.Mask, channel drawgl.Channel, forceLinear bool) (dst *drawgl.FloatImage) {
 	srcB := src.Bounds()
 	dstB := srcB
 
 	switch op {
-	case transformTranspose, transformTransverse, transformRotate90, transformRotate270:
+	case TransposeOperator, TransverseOperator, Rotate90Operator, Rotate270Operator:
 		dstB = image.Rect(srcB.Min.Y, srcB.Min.X, srcB.Max.Y, srcB.Max.X)
 	}
 
 	var offsetX, offsetY int
 
 	switch op {
-	case transformFlipH:
+	case FlipHOperator:
 		offsetX = srcB.Min.X + srcB.Max.X - 1
-	case transformFlipV:
+	case FlipVOperator:
 		offsetY = srcB.Min.Y + srcB.Max.Y - 1
-	case transformTranspose:
+	case TransposeOperator:
 		offsetX = dstB.Min.X - srcB.Min.Y
 		offsetY = dstB.Min.Y - srcB.Min.X
-	case transformTransverse:
+	case TransverseOperator:
 		offsetX = dstB.Min.Y + srcB.Max.Y - 1
 		offsetY = dstB.Min.X + srcB.Max.X - 1
-	case transformRotate90:
+	case Rotate90Operator:
 		offsetX = dstB.Min.X + srcB.Max.Y - 1
 		offsetY = dstB.Min.Y - srcB.Min.X
-	case transformRotate180:
+	case Rotate180Operator:
 		offsetX = dstB.Min.X + srcB.Max.X - 1
 		offsetY = dstB.Min.Y + srcB.Max.Y - 1
-	case transformRotate270:
+	case Rotate270Operator:
 		offsetX = dstB.Min.X - srcB.Min.Y
 		offsetY = dstB.Min.Y + srcB.Max.X - 1
 	}
@@ -169,19 +169,19 @@ func transform(op TransformOp, src *drawgl.FloatImage, mask drawgl.Mask, channel
 		var px, py int
 
 		switch op {
-		case transformFlipH:
+		case FlipHOperator:
 			px, py = offsetX-pt.X, pt.Y
-		case transformFlipV:
+		case FlipVOperator:
 			px, py = pt.X, offsetY-pt.Y
-		case transformTranspose:
+		case TransposeOperator:
 			px, py = offsetX+pt.Y, offsetY+pt.X
-		case transformTransverse:
+		case TransverseOperator:
 			px, py = offsetX-pt.Y, offsetY-pt.X
-		case transformRotate90:
+		case Rotate90Operator:
 			px, py = offsetX-pt.Y, offsetY+pt.X
-		case transformRotate180:
+		case Rotate180Operator:
 			px, py = offsetX-pt.X, offsetY-pt.Y
-		case transformRotate270:
+		case Rotate270Operator:
 			px, py = offsetX+pt.Y, offsetY-pt.X
 		}
 
