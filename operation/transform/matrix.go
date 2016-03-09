@@ -33,8 +33,8 @@ func affine(op transformOperation, src *drawgl.FloatImage, mask drawgl.Mask, cha
 			return
 		}
 
-		sx := float64(pt.X)*op.matrix[0][0] + float64(pt.Y)*op.matrix[0][1]
-		sy := float64(pt.X)*op.matrix[1][0] + float64(pt.Y)*op.matrix[1][1]
+		sx := float64(pt.X)*op.matrix[0][0] + float64(pt.Y)*op.matrix[0][1] + op.matrix[0][2]
+		sy := float64(pt.X)*op.matrix[1][0] + float64(pt.Y)*op.matrix[1][1] + op.matrix[1][2]
 
 		orig := src.FloatAt(pt.X, pt.Y)
 		srcC := op.interpolator.Get(src, sx, sy, edgeHandler)
