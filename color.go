@@ -1,6 +1,9 @@
 package drawgl
 
-import "image/color"
+import (
+	"errors"
+	"image/color"
+)
 
 type ColorValue float32
 
@@ -63,4 +66,50 @@ func (c *Channel) Normalize() {
 
 func (c Channel) Is(o Channel) bool {
 	return c&o == o
+}
+
+func (c Channel) MarshalJSON() (b []byte, err error) {
+	if c == RGB {
+		b = []byte(`"RGB"`)
+	} else {
+		b = []byte{'"'}
+		if c.Is(Red) {
+			b = append(b, 'R')
+		}
+		if c.Is(Green) {
+			b = append(b, 'G')
+		}
+		if c.Is(Blue) {
+			b = append(b, 'B')
+		}
+		if c.Is(Alpha) {
+			b = append(b, 'A')
+		}
+		b = append(b, '"')
+	}
+
+	return
+}
+
+func (c *Channel) UnmarshalJSON(b []byte) (err error) {
+	if b[0] == 34 && b[len(b)-1] == 34 {
+		for i := 1; i < len(b)-1; i++ {
+			switch b[i] {
+			case 'R':
+				*c |= Red
+			case 'G':
+				*c |= Green
+			case 'B':
+				*c |= Blue
+			case 'A':
+				*c |= Alpha
+			default:
+				err = errors.New("unknown channel value " + string(b))
+				break
+			}
+		}
+	} else {
+		err = errors.New("unknown channel value " + string(b))
+	}
+	return
 }

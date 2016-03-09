@@ -5,38 +5,44 @@ import (
 	"fmt"
 
 	"github.com/urandom/drawgl"
+	"github.com/urandom/drawgl/interpolator"
+	"github.com/urandom/drawgl/operation/transform/matrix"
 	"github.com/urandom/graph"
 	"github.com/urandom/graph/base"
-	"golang.org/x/image/draw"
 )
 
 type Scale struct {
 	base.Node
 
-	opts         ScaleOptions
-	interpolator draw.Interpolator
+	opts ScaleOptions
 }
 
 type ScaleOptions struct {
 	Width, Height int
-	Interpolator  InterpolatorOp
+	Interpolator  interpolator.Interpolator
+	Channel       drawgl.Channel
+	Mask          drawgl.Mask
+	Linear        bool
+}
+
+type jsonScaleOptions struct {
+	ScaleOptions
+	InterpolatorType string `json:"Interpolator"`
 }
 
 func NewScaleLinker(opts ScaleOptions) (graph.Linker, error) {
-	interpolator, err := opts.Interpolator.Inst()
-
-	if err != nil {
-		return nil, err
-	}
-
 	if opts.Width <= 0 && opts.Height <= 0 {
 		return nil, fmt.Errorf("invalid width %f and height %f, at least one has to be positive", opts.Width, opts.Height)
 	}
 
+	if opts.Interpolator == nil {
+		opts.Interpolator = interpolator.BiLinear
+	}
+
+	opts.Channel.Normalize()
 	return base.NewLinkerNode(Scale{
-		Node:         base.NewNode(),
-		opts:         opts,
-		interpolator: interpolator,
+		Node: base.NewNode(),
+		opts: opts,
 	}), nil
 }
 
@@ -80,19 +86,23 @@ func (n Scale) Process(wd graph.WalkData, buffers map[graph.ConnectorName]drawgl
 	dr.Max.X = dr.Min.X + tW
 	dr.Max.Y = dr.Min.Y + tH
 
-	buf = drawgl.NewFloatImage(dr)
+	m := matrix.New3()
+	m[0][0] = float64(b.Dx()) / float64(tW)
+	m[1][1] = float64(b.Dy()) / float64(tH)
 
-	n.interpolator.Scale(buf, dr, src, b, draw.Src, nil)
+	buf = affine(transformOperation{matrix: m, interpolator: n.opts.Interpolator, dstB: dr}, src, n.opts.Mask, n.opts.Channel, n.opts.Linear)
 }
 
 func init() {
 	graph.RegisterLinker("Scale", func(opts json.RawMessage) (graph.Linker, error) {
-		var o ScaleOptions
+		var o jsonScaleOptions
 
 		if err := json.Unmarshal([]byte(opts), &o); err != nil {
 			return nil, fmt.Errorf("constructing Scale: %v", err)
 		}
 
-		return NewScaleLinker(o)
+		o.ScaleOptions.Interpolator = interpolator.Inst(o.InterpolatorType)
+
+		return NewScaleLinker(o.ScaleOptions)
 	})
 }
