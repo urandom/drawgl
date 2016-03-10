@@ -41,7 +41,7 @@ func NewRotateLinker(opts RotateOptions) (graph.Linker, error) {
 		opts.Interpolator = interpolator.BiLinear
 	}
 
-	opts.Channel.Normalize()
+	opts.Channel.Normalize(true)
 	return base.NewLinkerNode(Rotate{
 		Node: base.NewNode(),
 		opts: opts,
@@ -88,19 +88,40 @@ func (n Rotate) Process(wd graph.WalkData, buffers map[graph.ConnectorName]drawg
 	m[1][0] = -sin
 
 	b := src.Bounds()
+	var h, k float64
 	if n.opts.Center[0] != 0 {
-		m[0][2] = float64(n.opts.Center[0])
+		h = float64(n.opts.Center[0])
 	} else if n.opts.CenterPercent[0] != 0 {
-		m[0][2] = n.opts.CenterPercent[0] * float64(b.Dx())
+		h = n.opts.CenterPercent[0] * float64(b.Dx())
 	}
 
 	if n.opts.Center[1] != 0 {
-		m[1][2] = float64(n.opts.Center[1])
+		k = float64(n.opts.Center[1])
 	} else if n.opts.CenterPercent[1] != 0 {
-		m[1][2] = n.opts.CenterPercent[1] * float64(b.Dy())
+		k = n.opts.CenterPercent[1] * float64(b.Dy())
 	}
 
-	buf = affine(transformOperation{matrix: m, interpolator: n.opts.Interpolator}, src, n.opts.Mask, n.opts.Channel, n.opts.Linear)
+	buf = src
+	dstB := b
+	if h != 0 || k != 0 {
+		move := matrix.New3()
+		move[0][2] = h
+		move[1][2] = k
+		dstB.Min.X -= int(h)
+		dstB.Min.Y -= int(k)
+		buf = affine(transformOperation{matrix: move, interpolator: n.opts.Interpolator, dstB: dstB}, buf, n.opts.Mask, n.opts.Channel, n.opts.Linear)
+	}
+
+	buf = affine(transformOperation{matrix: m, interpolator: n.opts.Interpolator, dstB: dstB}, buf, n.opts.Mask, n.opts.Channel, n.opts.Linear)
+
+	if h != 0 || k != 0 {
+		move := matrix.New3()
+		move[0][2] = -h
+		move[1][2] = -k
+		dstB.Min.X += int(h)
+		dstB.Min.Y += int(k)
+		buf = affine(transformOperation{matrix: move, interpolator: n.opts.Interpolator, dstB: dstB}, buf, n.opts.Mask, n.opts.Channel, n.opts.Linear)
+	}
 }
 
 func init() {

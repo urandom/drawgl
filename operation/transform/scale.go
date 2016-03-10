@@ -39,7 +39,7 @@ func NewScaleLinker(opts ScaleOptions) (graph.Linker, error) {
 		opts.Interpolator = interpolator.BiLinear
 	}
 
-	opts.Channel.Normalize()
+	opts.Channel.Normalize(true)
 	return base.NewLinkerNode(Scale{
 		Node: base.NewNode(),
 		opts: opts,

@@ -1,6 +1,7 @@
 package drawgl
 
 import (
+	"errors"
 	"image"
 	"image/draw"
 )
@@ -18,6 +19,11 @@ type EdgeHandler int
 const (
 	Extend EdgeHandler = iota
 	Wrap
+	Transparent
+)
+
+var (
+	ErrOutOfBounds = errors.New("out of bounds")
 )
 
 func NewMask(image image.Image, rect image.Rectangle) Mask {
@@ -119,7 +125,7 @@ func MaskColor(dst FloatColor, src FloatColor, c Channel, f float32, op draw.Op)
 	return dst
 }
 
-func TranslateCoords(x, y int, b image.Rectangle, h EdgeHandler) (mx, my int) {
+func TranslateCoords(x, y int, b image.Rectangle, h EdgeHandler) (mx, my int, err error) {
 	mx, my = x, y
 
 	switch h {
@@ -135,7 +141,7 @@ func TranslateCoords(x, y int, b image.Rectangle, h EdgeHandler) (mx, my int) {
 		} else if my >= b.Max.Y {
 			my = b.Min.Y - b.Max.Y + my
 		}
-	default:
+	case Extend:
 		if mx < b.Min.X {
 			mx = b.Min.X
 		} else if mx >= b.Max.X {
@@ -146,6 +152,10 @@ func TranslateCoords(x, y int, b image.Rectangle, h EdgeHandler) (mx, my int) {
 			my = b.Min.Y
 		} else if my >= b.Max.Y {
 			my = b.Max.Y - 1
+		}
+	case Transparent:
+		if mx < b.Min.X || mx >= b.Max.X || my < b.Min.Y || my >= b.Max.Y {
+			err = ErrOutOfBounds
 		}
 	}
 

@@ -25,7 +25,7 @@ func affine(op transformOperation, src *drawgl.FloatImage, mask drawgl.Mask, cha
 
 	dst = drawgl.NewFloatImage(dstB)
 
-	edgeHandler := drawgl.Extend
+	edgeHandler := drawgl.Transparent
 
 	it := drawgl.DefaultRectangleIterator(dstB, forceLinear)
 	it.Iterate(mask, func(pt image.Point, f float32) {

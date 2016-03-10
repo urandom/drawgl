@@ -58,9 +58,12 @@ func floatColorModel(c color.Color) color.Color {
 		ColorValue(b) / maxColor, ColorValue(a) / maxColor}
 }
 
-func (c *Channel) Normalize() {
+func (c *Channel) Normalize(includeAlpha ...bool) {
 	if *c == RGB {
 		*c = Red | Green | Blue
+		if len(includeAlpha) > 0 && includeAlpha[0] {
+			*c |= Alpha
+		}
 	}
 }
 

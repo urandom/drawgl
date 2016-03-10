@@ -85,7 +85,7 @@ func (n Convolution) Process(wd graph.WalkData, buffers map[graph.ConnectorName]
 			for cx := pt.X - half; cx <= pt.X+half; cx++ {
 				coeff := weights[l-((cy-pt.Y+half)*size+cx-pt.X+half)-1]
 
-				mx, my := drawgl.TranslateCoords(cx, cy, b, drawgl.Extend)
+				mx, my, _ := drawgl.TranslateCoords(cx, cy, b, drawgl.Extend)
 
 				c := src.UnsafeFloatAt(mx, my)
 				if mx == pt.X && my == pt.Y {

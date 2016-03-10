@@ -78,7 +78,7 @@ func (n BoxBlur) Process(wd graph.WalkData, buffers map[graph.ConnectorName]draw
 		var center, acc drawgl.FloatColor
 		if pt.X == b.Min.X {
 			for cx := pt.X - n.opts.Radius; cx <= pt.X+n.opts.Radius; cx++ {
-				mx, _ := drawgl.TranslateCoords(cx, pt.Y, b, edgeHandler)
+				mx, _, _ := drawgl.TranslateCoords(cx, pt.Y, b, edgeHandler)
 
 				c := src.UnsafeFloatAt(mx, pt.Y)
 				if mx == pt.X {
@@ -91,10 +91,10 @@ func (n BoxBlur) Process(wd graph.WalkData, buffers map[graph.ConnectorName]draw
 			center = src.UnsafeFloatAt(pt.X, pt.Y)
 			prev := buf.UnsafeFloatAt(pt.X-1, pt.Y)
 
-			mx, _ := drawgl.TranslateCoords(pt.X-n.opts.Radius-1, pt.Y, b, edgeHandler)
+			mx, _, _ := drawgl.TranslateCoords(pt.X-n.opts.Radius-1, pt.Y, b, edgeHandler)
 			leftmost := src.UnsafeFloatAt(mx, pt.Y)
 
-			mx, _ = drawgl.TranslateCoords(pt.X+n.opts.Radius, pt.Y, b, edgeHandler)
+			mx, _, _ = drawgl.TranslateCoords(pt.X+n.opts.Radius, pt.Y, b, edgeHandler)
 			rightmost := src.UnsafeFloatAt(mx, pt.Y)
 
 			acc = ColorAccumulator(prev, rightmost, leftmost, coeff, n.opts.Channel)
@@ -113,7 +113,7 @@ func (n BoxBlur) Process(wd graph.WalkData, buffers map[graph.ConnectorName]draw
 		var center, acc drawgl.FloatColor
 		if pt.Y == b.Min.Y {
 			for cy := pt.Y - n.opts.Radius; cy <= pt.Y+n.opts.Radius; cy++ {
-				_, my := drawgl.TranslateCoords(pt.X, cy, b, edgeHandler)
+				_, my, _ := drawgl.TranslateCoords(pt.X, cy, b, edgeHandler)
 
 				c := src.UnsafeFloatAt(pt.X, my)
 				if my == pt.Y {
@@ -126,10 +126,10 @@ func (n BoxBlur) Process(wd graph.WalkData, buffers map[graph.ConnectorName]draw
 			center = src.UnsafeFloatAt(pt.X, pt.Y)
 			prev := buf.UnsafeFloatAt(pt.X, pt.Y-1)
 
-			_, my := drawgl.TranslateCoords(pt.X, pt.Y-n.opts.Radius-1, b, edgeHandler)
+			_, my, _ := drawgl.TranslateCoords(pt.X, pt.Y-n.opts.Radius-1, b, edgeHandler)
 			leftmost := src.UnsafeFloatAt(pt.X, my)
 
-			_, my = drawgl.TranslateCoords(pt.X, pt.Y+n.opts.Radius, b, edgeHandler)
+			_, my, _ = drawgl.TranslateCoords(pt.X, pt.Y+n.opts.Radius, b, edgeHandler)
 			rightmost := src.UnsafeFloatAt(pt.X, my)
 
 			acc = ColorAccumulator(prev, rightmost, leftmost, coeff, n.opts.Channel)
