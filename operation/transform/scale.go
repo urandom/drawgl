@@ -3,8 +3,6 @@ package transform
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
-	"strings"
 
 	"github.com/urandom/drawgl"
 	"github.com/urandom/drawgl/interpolator"
@@ -112,34 +110,20 @@ func (n Scale) Process(wd graph.WalkData, buffers map[graph.ConnectorName]drawgl
 func init() {
 	graph.RegisterLinker("Scale", func(opts json.RawMessage) (graph.Linker, error) {
 		var o jsonScaleOptions
+		var err error
 
-		if err := json.Unmarshal([]byte(opts), &o); err != nil {
+		if err = json.Unmarshal([]byte(opts), &o); err != nil {
 			return nil, fmt.Errorf("constructing Scale: %v", err)
 		}
 
-		dimens := [2]string{o.Width, o.Height}
-		for i := 0; i < 2; i++ {
-			if dimens[i] != "" {
-				if strings.HasSuffix(dimens[i], "%") {
-					dimens[i] = strings.TrimSpace(strings.TrimSuffix(dimens[i], "%"))
-					if pc, err := strconv.ParseFloat(dimens[i], 64); err == nil {
-						if i == 0 {
-							o.ScaleOptions.WidthPercent = pc / 100
-						} else {
-							o.ScaleOptions.HeightPercent = pc / 100
-						}
-					}
-				} else {
-					dimens[i] = strings.TrimSpace(strings.TrimSuffix(dimens[i], "px"))
-					if px, err := strconv.Atoi(dimens[i]); err == nil {
-						if i == 0 {
-							o.ScaleOptions.Width = px
-						} else {
-							o.ScaleOptions.Height = px
-						}
-					}
-				}
-			}
+		if o.ScaleOptions.Width, o.ScaleOptions.WidthPercent, err =
+			drawgl.ParseLength(o.Width); err != nil {
+			return nil, fmt.Errorf("constructing Scale: parsing Width: %v", err)
+		}
+
+		if o.ScaleOptions.Height, o.ScaleOptions.HeightPercent, err =
+			drawgl.ParseLength(o.Height); err != nil {
+			return nil, fmt.Errorf("constructing Scale: parsing Height: %v", err)
 		}
 
 		o.ScaleOptions.Interpolator = interpolator.Inst(o.InterpolatorType)

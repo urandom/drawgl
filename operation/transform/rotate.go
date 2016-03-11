@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"strconv"
-	"strings"
 
 	"github.com/urandom/drawgl"
 	"github.com/urandom/drawgl/interpolator"
@@ -127,8 +125,9 @@ func (n Rotate) Process(wd graph.WalkData, buffers map[graph.ConnectorName]drawg
 func init() {
 	graph.RegisterLinker("Rotate", func(opts json.RawMessage) (graph.Linker, error) {
 		var o jsonRotateOptions
+		var err error
 
-		if err := json.Unmarshal([]byte(opts), &o); err != nil {
+		if err = json.Unmarshal([]byte(opts), &o); err != nil {
 			return nil, fmt.Errorf("constructing Rotate: %v", err)
 		}
 
@@ -136,18 +135,9 @@ func init() {
 
 		if len(o.Center) == 2 {
 			for i := 0; i < 2; i++ {
-				if o.Center[i] != "" {
-					if strings.HasSuffix(o.Center[i], "%") {
-						o.Center[i] = strings.TrimSpace(strings.TrimSuffix(o.Center[i], "%"))
-						if pc, err := strconv.ParseFloat(o.Center[i], 64); err == nil {
-							o.RotateOptions.CenterPercent[i] = pc / 100
-						}
-					} else {
-						o.Center[i] = strings.TrimSpace(strings.TrimSuffix(o.Center[i], "px"))
-						if px, err := strconv.Atoi(o.Center[i]); err == nil {
-							o.RotateOptions.Center[i] = px
-						}
-					}
+				if o.RotateOptions.Center[i], o.RotateOptions.CenterPercent[i], err =
+					drawgl.ParseLength(o.Center[i]); err != nil {
+					return nil, fmt.Errorf("constructing Rotate: parsing Center[%d]: %v", i, err)
 				}
 			}
 		}

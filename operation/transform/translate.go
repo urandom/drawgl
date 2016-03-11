@@ -3,8 +3,6 @@ package transform
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
-	"strings"
 
 	"github.com/urandom/drawgl"
 	"github.com/urandom/drawgl/interpolator"
@@ -69,6 +67,12 @@ func (n Translate) Process(wd graph.WalkData, buffers map[graph.ConnectorName]dr
 		return
 	}
 
+	if n.opts.Offset[0] == 0 && n.opts.Offset[1] == 0 &&
+		n.opts.OffsetPercent[0] == 0 && n.opts.OffsetPercent[1] == 0 {
+		buf = src
+		return
+	}
+
 	m := matrix.New3()
 	b := src.Bounds()
 	if n.opts.Offset[0] != 0 {
@@ -89,8 +93,9 @@ func (n Translate) Process(wd graph.WalkData, buffers map[graph.ConnectorName]dr
 func init() {
 	graph.RegisterLinker("Translate", func(opts json.RawMessage) (graph.Linker, error) {
 		var o jsonTranslateOptions
+		var err error
 
-		if err := json.Unmarshal([]byte(opts), &o); err != nil {
+		if err = json.Unmarshal([]byte(opts), &o); err != nil {
 			return nil, fmt.Errorf("constructing Translate: %v", err)
 		}
 
@@ -98,18 +103,9 @@ func init() {
 
 		if len(o.Offset) == 2 {
 			for i := 0; i < 2; i++ {
-				if o.Offset[i] != "" {
-					if strings.HasSuffix(o.Offset[i], "%") {
-						o.Offset[i] = strings.TrimSpace(strings.TrimSuffix(o.Offset[i], "%"))
-						if pc, err := strconv.ParseFloat(o.Offset[i], 64); err == nil {
-							o.TranslateOptions.OffsetPercent[i] = pc / 100
-						}
-					} else {
-						o.Offset[i] = strings.TrimSpace(strings.TrimSuffix(o.Offset[i], "px"))
-						if px, err := strconv.Atoi(o.Offset[i]); err == nil {
-							o.TranslateOptions.Offset[i] = px
-						}
-					}
+				if o.TranslateOptions.Offset[i], o.TranslateOptions.OffsetPercent[i], err =
+					drawgl.ParseLength(o.Offset[i]); err != nil {
+					return nil, fmt.Errorf("constructing Translate: parsing Offset[%d]: %v", i, err)
 				}
 			}
 		}
