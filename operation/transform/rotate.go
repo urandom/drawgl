@@ -102,12 +102,10 @@ func (n Rotate) Process(wd graph.WalkData, buffers map[graph.ConnectorName]drawg
 	buf = src
 	dstB := b
 	if h != 0 || k != 0 {
-		move := matrix.New3()
-		move[0][2] = h
-		move[1][2] = k
+		m[0][2] = h
+		m[1][2] = k
 		dstB.Min.X -= int(h)
 		dstB.Min.Y -= int(k)
-		buf = affine(transformOperation{matrix: move, interpolator: n.opts.Interpolator, dstB: dstB}, buf, n.opts.Mask, n.opts.Channel, n.opts.Linear)
 	}
 
 	buf = affine(transformOperation{matrix: m, interpolator: n.opts.Interpolator, dstB: dstB}, buf, n.opts.Mask, n.opts.Channel, n.opts.Linear)
