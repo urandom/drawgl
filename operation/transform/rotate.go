@@ -81,9 +81,9 @@ func (n Rotate) Process(wd graph.WalkData, buffers map[graph.ConnectorName]drawg
 	m := matrix.New3()
 
 	m[0][0] = cos
+	m[0][1] = -sin
+	m[1][0] = sin
 	m[1][1] = cos
-	m[0][1] = sin
-	m[1][0] = -sin
 
 	b := src.Bounds()
 	var h, k float64
@@ -101,23 +101,13 @@ func (n Rotate) Process(wd graph.WalkData, buffers map[graph.ConnectorName]drawg
 
 	buf = src
 	dstB := b
+
 	if h != 0 || k != 0 {
-		m[0][2] = h
-		m[1][2] = k
-		dstB.Min.X -= int(h)
-		dstB.Min.Y -= int(k)
+		m[0][2] = h - m[0][0]*h - m[0][1]*k
+		m[1][2] = k - m[1][0]*h - m[1][1]*k
 	}
 
 	buf = affine(transformOperation{matrix: m, interpolator: n.opts.Interpolator, dstB: dstB}, buf, n.opts.Mask, n.opts.Channel, n.opts.Linear)
-
-	if h != 0 || k != 0 {
-		move := matrix.New3()
-		move[0][2] = -h
-		move[1][2] = -k
-		dstB.Min.X += int(h)
-		dstB.Min.Y += int(k)
-		buf = affine(transformOperation{matrix: move, interpolator: n.opts.Interpolator, dstB: dstB}, buf, n.opts.Mask, n.opts.Channel, n.opts.Linear)
-	}
 }
 
 func init() {

@@ -76,15 +76,15 @@ func (n Translate) Process(wd graph.WalkData, buffers map[graph.ConnectorName]dr
 	m := matrix.New3()
 	b := src.Bounds()
 	if n.opts.Offset[0] != 0 {
-		m[0][2] = -float64(n.opts.Offset[0])
+		m[0][2] = float64(n.opts.Offset[0])
 	} else if n.opts.OffsetPercent[0] != 0 {
-		m[0][2] = -n.opts.OffsetPercent[0] * float64(b.Dx())
+		m[0][2] = n.opts.OffsetPercent[0] * float64(b.Dx())
 	}
 
 	if n.opts.Offset[1] != 0 {
-		m[1][2] = -float64(n.opts.Offset[1])
+		m[1][2] = float64(n.opts.Offset[1])
 	} else if n.opts.OffsetPercent[1] != 0 {
-		m[1][2] = -n.opts.OffsetPercent[1] * float64(b.Dy())
+		m[1][2] = n.opts.OffsetPercent[1] * float64(b.Dy())
 	}
 
 	buf = affine(transformOperation{matrix: m, interpolator: n.opts.Interpolator}, src, n.opts.Mask, n.opts.Channel, n.opts.Linear)

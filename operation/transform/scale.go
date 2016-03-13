@@ -101,8 +101,8 @@ func (n Scale) Process(wd graph.WalkData, buffers map[graph.ConnectorName]drawgl
 	dr.Max.Y = dr.Min.Y + tH
 
 	m := matrix.New3()
-	m[0][0] = float64(b.Dx()) / float64(tW)
-	m[1][1] = float64(b.Dy()) / float64(tH)
+	m[0][0] = float64(tW) / float64(b.Dx())
+	m[1][1] = float64(tH) / float64(b.Dy())
 
 	buf = affine(transformOperation{matrix: m, interpolator: n.opts.Interpolator, dstB: dr}, src, n.opts.Mask, n.opts.Channel, n.opts.Linear)
 }
