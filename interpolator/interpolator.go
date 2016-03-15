@@ -8,34 +8,20 @@ import (
 	"github.com/urandom/drawgl/operation/transform/matrix"
 )
 
-var (
-	BiLinear Interpolator = bilinear{}
-)
-
 type Interpolator interface {
-	Get(src *drawgl.FloatImage, x, y float64, edgeHandler drawgl.EdgeHandler) drawgl.FloatColor
+	Get(src *drawgl.FloatImage, x, y float64) drawgl.FloatColor
 }
 
 func New(
 	kind string,
 	src *drawgl.FloatImage,
-	edgeHandler drawgl.EdgeHandler,
 	m matrix.Matrix3,
 	bias image.Point,
 ) Interpolator {
 
-	var i = BiLinear
 	switch kind {
-	case "BiLinear":
-		k := newKernel(src, edgeHandler, m, bias)
-		k.Support = 1
-		k.At = func(t float64) float64 {
-			return 1 - t
-		}
-
-		return k
 	case "CatmullRom":
-		k := newKernel(src, edgeHandler, m, bias)
+		k := newKernel(src, m, bias)
 		k.Support = 2
 		k.At = func(t float64) float64 {
 			if t < 1 {
@@ -46,7 +32,7 @@ func New(
 
 		return k
 	case "Lanczos":
-		k := newKernel(src, edgeHandler, m, bias)
+		k := newKernel(src, m, bias)
 		k.Support = 3
 		k.At = func(t float64) float64 {
 			t = math.Abs(t)
@@ -57,9 +43,17 @@ func New(
 		}
 
 		return k
-	}
+	case "BiLinear":
+		fallthrough
+	default:
+		k := newKernel(src, m, bias)
+		k.Support = 1
+		k.At = func(t float64) float64 {
+			return 1 - t
+		}
 
-	return i
+		return k
+	}
 }
 
 func sinc(x float64) float64 {

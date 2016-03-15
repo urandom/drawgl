@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/urandom/drawgl"
-	"github.com/urandom/drawgl/interpolator"
 	"github.com/urandom/drawgl/operation/transform/matrix"
 	"github.com/urandom/graph"
 	"github.com/urandom/graph/base"
@@ -20,7 +19,7 @@ type Translate struct {
 type TranslateOptions struct {
 	Offset        [2]int
 	OffsetPercent [2]float64
-	Interpolator  interpolator.Interpolator
+	Interpolator  string
 	Channel       drawgl.Channel
 	Mask          drawgl.Mask
 	Linear        bool
@@ -28,15 +27,10 @@ type TranslateOptions struct {
 
 type jsonTranslateOptions struct {
 	TranslateOptions
-	InterpolatorType string `json:"Interpolator"`
-	Offset           [2]string
+	Offset [2]string
 }
 
 func NewTranslateLinker(opts TranslateOptions) (graph.Linker, error) {
-	if opts.Interpolator == nil {
-		opts.Interpolator = interpolator.BiLinear
-	}
-
 	opts.Channel.Normalize(true)
 	return base.NewLinkerNode(Translate{
 		Node: base.NewNode(),
@@ -98,8 +92,6 @@ func init() {
 		if err = json.Unmarshal([]byte(opts), &o); err != nil {
 			return nil, fmt.Errorf("constructing Translate: %v", err)
 		}
-
-		o.TranslateOptions.Interpolator = interpolator.Inst(o.InterpolatorType)
 
 		if len(o.Offset) == 2 {
 			for i := 0; i < 2; i++ {

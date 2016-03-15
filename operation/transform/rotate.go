@@ -6,7 +6,6 @@ import (
 	"math"
 
 	"github.com/urandom/drawgl"
-	"github.com/urandom/drawgl/interpolator"
 	"github.com/urandom/drawgl/operation/transform/matrix"
 	"github.com/urandom/graph"
 	"github.com/urandom/graph/base"
@@ -22,7 +21,7 @@ type RotateOptions struct {
 	Degrees       float64
 	Center        [2]int
 	CenterPercent [2]float64
-	Interpolator  interpolator.Interpolator
+	Interpolator  string
 	Channel       drawgl.Channel
 	Mask          drawgl.Mask
 	Linear        bool
@@ -30,15 +29,10 @@ type RotateOptions struct {
 
 type jsonRotateOptions struct {
 	RotateOptions
-	InterpolatorType string `json:"Interpolator"`
-	Center           [2]string
+	Center [2]string
 }
 
 func NewRotateLinker(opts RotateOptions) (graph.Linker, error) {
-	if opts.Interpolator == nil {
-		opts.Interpolator = interpolator.BiLinear
-	}
-
 	opts.Channel.Normalize(true)
 	return base.NewLinkerNode(Rotate{
 		Node: base.NewNode(),
@@ -100,14 +94,13 @@ func (n Rotate) Process(wd graph.WalkData, buffers map[graph.ConnectorName]drawg
 	}
 
 	buf = src
-	dstB := b
 
 	if h != 0 || k != 0 {
 		m[0][2] = h - m[0][0]*h - m[0][1]*k
 		m[1][2] = k - m[1][0]*h - m[1][1]*k
 	}
 
-	buf = affine(transformOperation{matrix: m, interpolator: n.opts.Interpolator, dstB: dstB}, buf, n.opts.Mask, n.opts.Channel, n.opts.Linear)
+	buf = affine(transformOperation{matrix: m, interpolator: n.opts.Interpolator}, buf, n.opts.Mask, n.opts.Channel, n.opts.Linear)
 }
 
 func init() {
@@ -118,8 +111,6 @@ func init() {
 		if err = json.Unmarshal([]byte(opts), &o); err != nil {
 			return nil, fmt.Errorf("constructing Rotate: %v", err)
 		}
-
-		o.RotateOptions.Interpolator = interpolator.Inst(o.InterpolatorType)
 
 		if len(o.Center) == 2 {
 			for i := 0; i < 2; i++ {

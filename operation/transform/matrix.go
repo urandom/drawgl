@@ -12,7 +12,7 @@ import (
 
 type transformOperation struct {
 	matrix       matrix.Matrix3
-	interpolator interpolator.Interpolator
+	interpolator string
 	dstB         image.Rectangle
 }
 
@@ -26,12 +26,11 @@ func affine(op transformOperation, src *drawgl.FloatImage, mask drawgl.Mask, cha
 	dstB := op.dstB
 
 	if dstB.Empty() {
-		dstB = srcB
+		dstB = affineTransformRect(op.matrix, srcB)
 	}
 
 	dst = drawgl.NewFloatImage(dstB)
 
-	edgeHandler := drawgl.Transparent
 	inverse := op.matrix
 	inverse.Invert()
 
@@ -40,6 +39,8 @@ func affine(op transformOperation, src *drawgl.FloatImage, mask drawgl.Mask, cha
 	bias.Y--
 	inverse[0][2] -= float64(bias.X)
 	inverse[1][2] -= float64(bias.Y)
+
+	interpolator := interpolator.New(op.interpolator, src, inverse, bias)
 
 	it := drawgl.DefaultRectangleIterator(dstB, forceLinear)
 	it.Iterate(mask, func(pt image.Point, f float32) {
@@ -54,7 +55,7 @@ func affine(op transformOperation, src *drawgl.FloatImage, mask drawgl.Mask, cha
 		sy := inverse[1][0]*dx + inverse[1][1]*dy + inverse[1][2] + float64(bias.Y)
 
 		orig := src.FloatAt(pt.X, pt.Y)
-		srcC := op.interpolator.Get(src, sx, sy, edgeHandler)
+		srcC := interpolator.Get(src, sx, sy)
 
 		dst.UnsafeSetColor(pt.X, pt.Y, drawgl.MaskColor(orig, srcC, channel, f, draw.Over))
 	})

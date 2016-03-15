@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/urandom/drawgl"
-	"github.com/urandom/drawgl/interpolator"
 	"github.com/urandom/drawgl/operation/transform/matrix"
 	"github.com/urandom/graph"
 	"github.com/urandom/graph/base"
@@ -20,7 +19,7 @@ type Scale struct {
 type ScaleOptions struct {
 	Width, Height               int
 	WidthPercent, HeightPercent float64
-	Interpolator                interpolator.Interpolator
+	Interpolator                string
 	Channel                     drawgl.Channel
 	Mask                        drawgl.Mask
 	Linear                      bool
@@ -28,17 +27,12 @@ type ScaleOptions struct {
 
 type jsonScaleOptions struct {
 	ScaleOptions
-	InterpolatorType string `json:"Interpolator"`
-	Width, Height    string
+	Width, Height string
 }
 
 func NewScaleLinker(opts ScaleOptions) (graph.Linker, error) {
 	if opts.Width <= 0 && opts.Height <= 0 && opts.WidthPercent <= 0 && opts.HeightPercent <= 0 {
 		return nil, fmt.Errorf("invalid width %f and height %f, at least one has to be positive", opts.Width, opts.Height)
-	}
-
-	if opts.Interpolator == nil {
-		opts.Interpolator = interpolator.BiLinear
 	}
 
 	opts.Channel.Normalize(true)
@@ -125,8 +119,6 @@ func init() {
 			drawgl.ParseLength(o.Height); err != nil {
 			return nil, fmt.Errorf("constructing Scale: parsing Height: %v", err)
 		}
-
-		o.ScaleOptions.Interpolator = interpolator.Inst(o.InterpolatorType)
 
 		return NewScaleLinker(o.ScaleOptions)
 	})

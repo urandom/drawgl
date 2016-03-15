@@ -19,7 +19,6 @@ type EdgeHandler int
 const (
 	Extend EdgeHandler = iota
 	Wrap
-	Transparent
 )
 
 var (
@@ -125,7 +124,7 @@ func MaskColor(dst FloatColor, src FloatColor, c Channel, f float32, op draw.Op)
 	return dst
 }
 
-func TranslateCoords(x, y int, b image.Rectangle, h EdgeHandler) (mx, my int, err error) {
+func TranslateCoords(x, y int, b image.Rectangle, h EdgeHandler) (mx, my int) {
 	mx, my = x, y
 
 	switch h {
@@ -152,10 +151,6 @@ func TranslateCoords(x, y int, b image.Rectangle, h EdgeHandler) (mx, my int, er
 			my = b.Min.Y
 		} else if my >= b.Max.Y {
 			my = b.Max.Y - 1
-		}
-	case Transparent:
-		if mx < b.Min.X || mx >= b.Max.X || my < b.Min.Y || my >= b.Max.Y {
-			err = ErrOutOfBounds
 		}
 	}
 
