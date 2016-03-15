@@ -13,7 +13,6 @@ import (
 type transformOperation struct {
 	matrix       matrix.Matrix3
 	interpolator string
-	dstB         image.Rectangle
 }
 
 func affine(op transformOperation, src *drawgl.FloatImage, mask drawgl.Mask, channel drawgl.Channel, forceLinear bool) (dst *drawgl.FloatImage) {
@@ -23,18 +22,19 @@ func affine(op transformOperation, src *drawgl.FloatImage, mask drawgl.Mask, cha
 	}
 
 	srcB := src.Bounds()
-	dstB := op.dstB
 
-	if dstB.Empty() {
-		dstB = affineTransformRect(op.matrix, srcB)
-	}
-
+	adr := srcB.Intersect(affineTransformRect(op.matrix, srcB))
+	dstB := srcB
 	dst = drawgl.NewFloatImage(dstB)
+
+	if adr.Empty() || srcB.Empty() {
+		return
+	}
 
 	inverse := op.matrix
 	inverse.Invert()
 
-	bias := affineTransformRect(inverse, dstB).Min
+	bias := affineTransformRect(inverse, adr).Min
 	bias.X--
 	bias.Y--
 	inverse[0][2] -= float64(bias.X)
@@ -42,7 +42,7 @@ func affine(op transformOperation, src *drawgl.FloatImage, mask drawgl.Mask, cha
 
 	interpolator := interpolator.New(op.interpolator, src, inverse, bias)
 
-	it := drawgl.DefaultRectangleIterator(dstB, forceLinear)
+	it := drawgl.DefaultRectangleIterator(adr, forceLinear)
 	it.Iterate(mask, func(pt image.Point, f float32) {
 		if f == 0 {
 			return
@@ -53,6 +53,10 @@ func affine(op transformOperation, src *drawgl.FloatImage, mask drawgl.Mask, cha
 
 		sx := inverse[0][0]*dx + inverse[0][1]*dy + inverse[0][2] + float64(bias.X)
 		sy := inverse[1][0]*dx + inverse[1][1]*dy + inverse[1][2] + float64(bias.Y)
+
+		if !(image.Point{int(sx) + bias.X, int(sy) + bias.Y}).In(srcB) {
+			return
+		}
 
 		orig := src.FloatAt(pt.X, pt.Y)
 		srcC := interpolator.Get(src, sx, sy)
