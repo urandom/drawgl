@@ -40,7 +40,7 @@ func affine(op transformOperation, src *drawgl.FloatImage, mask drawgl.Mask, cha
 	inverse[0][2] -= float64(bias.X)
 	inverse[1][2] -= float64(bias.Y)
 
-	interpolator := interpolator.New(op.interpolator, src, inverse, bias)
+	interpolator := interpolator.New(op.interpolator, src, inverse)
 
 	it := drawgl.DefaultRectangleIterator(adr, forceLinear)
 	it.Iterate(mask, func(pt image.Point, f float32) {

@@ -1,7 +1,6 @@
 package interpolator
 
 import (
-	"image"
 	"math"
 
 	"github.com/urandom/drawgl"
@@ -18,13 +17,11 @@ type kernel struct {
 
 	halfWidth, kernelArgScale [2]float64
 	weights                   [2][]float64
-	bias                      image.Point
 }
 
 func newKernel(
 	src *drawgl.FloatImage,
 	m matrix.Matrix3,
-	bias image.Point,
 ) kernel {
 	i := kernel{}
 
@@ -53,8 +50,6 @@ func newKernel(
 	i.weights[0] = make([]float64, 1+2*int(math.Ceil(i.halfWidth[0])))
 	i.weights[1] = make([]float64, 1+2*int(math.Ceil(i.halfWidth[1])))
 
-	i.bias = bias
-
 	return i
 }
 
@@ -65,7 +60,6 @@ func (i kernel) Get(src *drawgl.FloatImage, fx, fy float64) drawgl.FloatColor {
 
 	totalWeights := [2]float64{}
 
-	fx += float64(i.bias.X)
 	fx -= 0.5
 	ix := int(math.Floor(fx - i.halfWidth[0]))
 
@@ -91,7 +85,6 @@ func (i kernel) Get(src *drawgl.FloatImage, fx, fy float64) drawgl.FloatColor {
 		i.weights[0][x] /= totalWeights[0]
 	}
 
-	fy += float64(i.bias.Y)
 	fy -= 0.5
 	iy := int(math.Floor(fy - i.halfWidth[1]))
 	if iy < b.Min.Y {

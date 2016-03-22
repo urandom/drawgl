@@ -1,7 +1,6 @@
 package interpolator
 
 import (
-	"image"
 	"math"
 
 	"github.com/urandom/drawgl"
@@ -16,12 +15,13 @@ func New(
 	kind string,
 	src *drawgl.FloatImage,
 	m matrix.Matrix3,
-	bias image.Point,
 ) Interpolator {
 
 	switch kind {
+	case "NearestNeighbor":
+		return nearestNeighbor{}
 	case "CatmullRom":
-		k := newKernel(src, m, bias)
+		k := newKernel(src, m)
 		k.Support = 2
 		k.At = func(t float64) float64 {
 			if t < 1 {
@@ -32,7 +32,7 @@ func New(
 
 		return k
 	case "Lanczos":
-		k := newKernel(src, m, bias)
+		k := newKernel(src, m)
 		k.Support = 3
 		k.At = func(t float64) float64 {
 			t = math.Abs(t)
@@ -46,7 +46,7 @@ func New(
 	case "BiLinear":
 		fallthrough
 	default:
-		k := newKernel(src, m, bias)
+		k := newKernel(src, m)
 		k.Support = 1
 		k.At = func(t float64) float64 {
 			return 1 - t
