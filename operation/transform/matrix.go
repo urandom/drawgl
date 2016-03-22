@@ -51,12 +51,15 @@ func affine(op transformOperation, src *drawgl.FloatImage, mask drawgl.Mask, cha
 		dx := float64(dstB.Min.X+pt.X) + 0.5
 		dy := float64(dstB.Min.Y+pt.Y) + 0.5
 
-		sx := inverse[0][0]*dx + inverse[0][1]*dy + inverse[0][2] + float64(bias.X)
-		sy := inverse[1][0]*dx + inverse[1][1]*dy + inverse[1][2] + float64(bias.Y)
+		sx := inverse[0][0]*dx + inverse[0][1]*dy + inverse[0][2]
+		sy := inverse[1][0]*dx + inverse[1][1]*dy + inverse[1][2]
 
 		if !(image.Point{int(sx) + bias.X, int(sy) + bias.Y}).In(srcB) {
 			return
 		}
+
+		sx += float64(bias.X)
+		sy += float64(bias.Y)
 
 		orig := src.FloatAt(pt.X, pt.Y)
 		srcC := interpolator.Get(src, sx, sy)
