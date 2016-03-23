@@ -8,9 +8,10 @@
 			"Name": "Scale",
 			"Options": {
 				"Width": "{{ if gt (len .Args) 2 -}} {{ index .Args 2 }} {{- else -}} 640 {{- end }}",
-				"Height": "{{ if gt (len .Args) 3 -}} {{ index .Args 3 }} {{- else -}} 0 {{- end }}"
-				{{- if gt (len .Args) 4 -}},
-				"Interpolator": "{{ index .Args 4 }}"
+				"Height": "{{ if gt (len .Args) 3 -}} {{ index .Args 3 }} {{- else -}} 0 {{- end }}",
+				"Crop": {{ if and (gt (len .Args) 4) (eq (index .Args 4) "1" ) -}} true {{- else -}} false {{- end }}
+				{{- if gt (len .Args) 5 -}},
+				"Interpolator": "{{ index .Args 5 }}"
 				{{- end }}
 
 			},

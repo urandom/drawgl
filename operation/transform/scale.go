@@ -3,6 +3,7 @@ package transform
 import (
 	"encoding/json"
 	"fmt"
+	"image"
 
 	"github.com/urandom/drawgl"
 	"github.com/urandom/drawgl/operation/transform/matrix"
@@ -19,6 +20,7 @@ type Scale struct {
 type ScaleOptions struct {
 	Width, Height               int
 	WidthPercent, HeightPercent float64
+	Crop                        bool
 	Interpolator                string
 	Channel                     drawgl.Channel
 	Mask                        drawgl.Mask
@@ -94,7 +96,14 @@ func (n Scale) Process(wd graph.WalkData, buffers map[graph.ConnectorName]drawgl
 	m[0][0] = float64(tW) / float64(b.Dx())
 	m[1][1] = float64(tH) / float64(b.Dy())
 
-	buf = affine(transformOperation{matrix: m, interpolator: n.opts.Interpolator}, src, n.opts.Mask, n.opts.Channel, n.opts.Linear)
+	op := transformOperation{matrix: m, interpolator: n.opts.Interpolator}
+
+	if n.opts.Crop {
+		op.dstB.Min = b.Min
+		op.dstB.Max = image.Point{X: b.Min.X + tW, Y: b.Min.Y + tH}
+	}
+
+	buf = affine(op, src, n.opts.Mask, n.opts.Channel, n.opts.Linear)
 }
 
 func init() {

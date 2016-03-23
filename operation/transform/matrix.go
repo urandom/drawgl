@@ -13,6 +13,7 @@ import (
 type transformOperation struct {
 	matrix       matrix.Matrix3
 	interpolator string
+	dstB         image.Rectangle
 }
 
 func affine(op transformOperation, src *drawgl.FloatImage, mask drawgl.Mask, channel drawgl.Channel, forceLinear bool) (dst *drawgl.FloatImage) {
@@ -22,9 +23,12 @@ func affine(op transformOperation, src *drawgl.FloatImage, mask drawgl.Mask, cha
 	}
 
 	srcB := src.Bounds()
+	dstB := op.dstB
+	if dstB.Empty() {
+		dstB = srcB
+	}
 
 	adr := srcB.Intersect(affineTransformRect(op.matrix, srcB))
-	dstB := srcB
 	dst = drawgl.NewFloatImage(dstB)
 
 	if adr.Empty() || srcB.Empty() {
