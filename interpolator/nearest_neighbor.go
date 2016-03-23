@@ -6,7 +6,7 @@ type nearestNeighbor struct{}
 
 // Copy from golang.org/x/image/draw
 // Copyright (c) 2009 The Go Authors. All rights reserved.
-func (i nearestNeighbor) Get(src *drawgl.FloatImage, fx, fy float64) drawgl.FloatColor {
+func (nearestNeighbor) Get(src *drawgl.FloatImage, fx, fy float64) drawgl.FloatColor {
 	b := src.Bounds()
 	pi := (int(fy)-b.Min.Y)*src.Stride + (int(fx)-b.Min.X)*4
 
