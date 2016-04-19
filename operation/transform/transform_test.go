@@ -45,7 +45,7 @@ func TestTransformFlipH(t *testing.T) {
 	for y := b.Min.Y; y < b.Max.Y; y++ {
 		for x := b.Min.X; x < b.Max.X; x++ {
 			c := r.Buffer.FloatAt(x, y)
-			if c != exp[y][x] {
+			if !c.ApproxEqual(exp[y][x]) {
 				t.Errorf("At %d:%d, color %v doesn't match %v\n", x, y, c, exp[y][x])
 			}
 		}

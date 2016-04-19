@@ -31,7 +31,7 @@ func NewConvolutionLinker(opts ConvolutionOptions) (graph.Linker, error) {
 		return nil, errors.New("empty kernel")
 	}
 
-	opts.Channel.Normalize()
+	opts.Channel = opts.Channel.Normalize()
 
 	return base.NewLinkerNode(Convolution{Node: base.NewNode(), opts: opts}), nil
 }

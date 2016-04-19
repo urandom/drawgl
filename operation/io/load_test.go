@@ -62,7 +62,7 @@ func TestLoadPng(t *testing.T) {
 		for x := b.Min.X; x < b.Max.X; x++ {
 			c := buf.FloatAt(x, y)
 
-			if c != colors[y][x] {
+			if !c.ApproxEqual(colors[y][x]) {
 				t.Fatalf("At %d:%d, color %v doesn't match %v\n", x, y, c, colors[y][x])
 			}
 		}
@@ -97,7 +97,7 @@ func TestLoadGif(t *testing.T) {
 		for x := b.Min.X; x < b.Max.X; x++ {
 			c := buf.FloatAt(x, y)
 
-			if c != colors[y][x] {
+			if !c.ApproxEqual(colors[y][x]) {
 				t.Fatalf("At %d:%d, color %v doesn't match %v\n", x, y, c, colors[y][x])
 			}
 		}

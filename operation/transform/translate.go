@@ -31,7 +31,8 @@ type jsonTranslateOptions struct {
 }
 
 func NewTranslateLinker(opts TranslateOptions) (graph.Linker, error) {
-	opts.Channel.Normalize(true)
+	opts.Channel = opts.Channel.Normalize(true)
+
 	return base.NewLinkerNode(Translate{
 		Node: base.NewNode(),
 		opts: opts,

@@ -33,7 +33,8 @@ type jsonRotateOptions struct {
 }
 
 func NewRotateLinker(opts RotateOptions) (graph.Linker, error) {
-	opts.Channel.Normalize(true)
+	opts.Channel = opts.Channel.Normalize(true)
+
 	return base.NewLinkerNode(Rotate{
 		Node: base.NewNode(),
 		opts: opts,

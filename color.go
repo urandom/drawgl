@@ -14,7 +14,8 @@ type FloatColor struct {
 type Channel int
 
 const (
-	maxColor = 0xffff
+	maxColor          = 0xffff
+	defaultFloatDelta = 0.005
 )
 
 const (
@@ -38,6 +39,56 @@ func (c FloatColor) RGBA() (uint32, uint32, uint32, uint32) {
 		uint32(c.A.Clamped()*maxColor + 0.5)
 }
 
+// ApproxEqual is used by tests to check whether a color is approximately equal
+// to another
+func (c FloatColor) ApproxEqual(o FloatColor) bool {
+	if c != o {
+		if c.R > o.R {
+			if c.R-o.R > defaultFloatDelta {
+				return false
+			}
+		} else if c.R < o.R {
+			if o.R-c.R > defaultFloatDelta {
+				return false
+			}
+		}
+
+		if c.G > o.G {
+			if c.G-o.G > defaultFloatDelta {
+				return false
+			}
+		} else if c.G < o.G {
+			if o.G-c.G > defaultFloatDelta {
+				return false
+			}
+		}
+
+		if c.B > o.B {
+			if c.B-o.B > defaultFloatDelta {
+				return false
+			}
+		} else if c.B < o.B {
+			if o.B-c.B > defaultFloatDelta {
+				return false
+			}
+		}
+
+		if c.A > o.A {
+			if c.A-o.A > defaultFloatDelta {
+				return false
+			}
+		} else if c.A < o.A {
+			if o.A-c.A > defaultFloatDelta {
+				return false
+			}
+		}
+
+	}
+
+	return true
+}
+
+// Clamped returns a clamped color value, with a range 0-1
 func (v ColorValue) Clamped() ColorValue {
 	if v < 0 {
 		v = 0
@@ -58,15 +109,21 @@ func floatColorModel(c color.Color) color.Color {
 		ColorValue(b) / maxColor, ColorValue(a) / maxColor}
 }
 
-func (c *Channel) Normalize(includeAlpha ...bool) {
-	if *c == RGB {
-		*c = Red | Green | Blue
+// Normalize returns a normalized version a channel value. If the value is the
+// composite RGB value, it is transformed to Red | Green | Blue. If
+// includeAlpha is given and true, the alpha is also added to the channel
+func (c Channel) Normalize(includeAlpha ...bool) Channel {
+	if c == RGB {
+		c = Red | Green | Blue
 		if len(includeAlpha) > 0 && includeAlpha[0] {
-			*c |= Alpha
+			c |= Alpha
 		}
 	}
+
+	return c
 }
 
+// Is checks whether the channel contains a given value
 func (c Channel) Is(o Channel) bool {
 	return c&o == o
 }

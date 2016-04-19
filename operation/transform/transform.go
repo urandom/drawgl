@@ -45,7 +45,7 @@ func NewTransformLinker(opts TransformOptions) (graph.Linker, error) {
 		return nil, fmt.Errorf("unknown operator %d", opts.Operator)
 	}
 
-	opts.Channel.Normalize()
+	opts.Channel = opts.Channel.Normalize()
 
 	return base.NewLinkerNode(Transform{
 		Node: base.NewNode(),

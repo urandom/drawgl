@@ -35,7 +35,7 @@ func TestScale(t *testing.T) {
 	}
 
 	b := r.Buffer.Bounds()
-	if b.Dx() != 2 || b.Dy() != 2 {
+	if b.Dx() != 4 || b.Dy() != 4 {
 		t.Fatalf("Bounds size doesn't match (10, 10): %v", b)
 	}
 
@@ -43,7 +43,7 @@ func TestScale(t *testing.T) {
 	for y := b.Min.Y; y < b.Max.Y; y++ {
 		for x := b.Min.X; x < b.Max.X; x++ {
 			c := r.Buffer.FloatAt(x, y)
-			if c != exp[y][x] {
+			if !c.ApproxEqual(exp[y][x]) {
 				t.Fatalf("At %d:%d, color %v doesn't match %v\n", x, y, c, exp[y][x])
 			}
 		}

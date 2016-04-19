@@ -31,7 +31,7 @@ func NewBoxBlurLinker(opts BoxBlurOptions) (graph.Linker, error) {
 		opts.Radius = 4
 	}
 
-	opts.Channel.Normalize()
+	opts.Channel = opts.Channel.Normalize()
 	return base.NewLinkerNode(BoxBlur{
 		Node: base.NewNode(),
 		opts: opts,

@@ -37,7 +37,7 @@ func NewScaleLinker(opts ScaleOptions) (graph.Linker, error) {
 		return nil, fmt.Errorf("invalid width %f and height %f, at least one has to be positive", opts.Width, opts.Height)
 	}
 
-	opts.Channel.Normalize(true)
+	opts.Channel = opts.Channel.Normalize(true)
 	return base.NewLinkerNode(Scale{
 		Node: base.NewNode(),
 		opts: opts,
