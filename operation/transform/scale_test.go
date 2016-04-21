@@ -9,12 +9,7 @@ import (
 )
 
 func TestScale(t *testing.T) {
-	_, err := transform.NewScaleLinker(transform.ScaleOptions{Interpolator: "something"})
-	if err == nil {
-		t.Fatalf("Expected an error\n")
-	}
-
-	_, err = transform.NewScaleLinker(transform.ScaleOptions{})
+	_, err := transform.NewScaleLinker(transform.ScaleOptions{})
 	if err == nil {
 		t.Fatalf("Expected an error\n")
 	}
@@ -50,15 +45,31 @@ func TestScale(t *testing.T) {
 	}
 }
 
-func expectedScaleResult1() (c [2][2]drawgl.FloatColor) {
-	c = [2][2]drawgl.FloatColor{
-		[2]drawgl.FloatColor{
-			drawgl.FloatColor{0.49999237, 0.49999237, 0.24998856, 1},
-			drawgl.FloatColor{0.44606698, 0.6960708, 0.44606698, 1},
+func expectedScaleResult1() (c [4][4]drawgl.FloatColor) {
+	c = [4][4]drawgl.FloatColor{
+		[4]drawgl.FloatColor{
+			drawgl.FloatColor{1, 1, 1, 1},
+			drawgl.FloatColor{1, 1, 0, 1},
+			drawgl.FloatColor{0, 0, 0, 0},
+			drawgl.FloatColor{0, 0, 0, 0},
 		},
-		[2]drawgl.FloatColor{
-			drawgl.FloatColor{0.24998856, 0.44606698, 0.5980316, 1},
-			drawgl.FloatColor{0.6421454, 0.19607843, 0.5441062, 1},
+		[4]drawgl.FloatColor{
+			drawgl.FloatColor{1, 1, 1, 1},
+			drawgl.FloatColor{1, 0, 1, 1},
+			drawgl.FloatColor{0, 0, 0, 0},
+			drawgl.FloatColor{0, 0, 0, 0},
+		},
+		[4]drawgl.FloatColor{
+			drawgl.FloatColor{0, 0, 0, 0},
+			drawgl.FloatColor{0, 0, 0, 0},
+			drawgl.FloatColor{0, 0, 0, 0},
+			drawgl.FloatColor{0, 0, 0, 0},
+		},
+		[4]drawgl.FloatColor{
+			drawgl.FloatColor{0, 0, 0, 0},
+			drawgl.FloatColor{0, 0, 0, 0},
+			drawgl.FloatColor{0, 0, 0, 0},
+			drawgl.FloatColor{0, 0, 0, 0},
 		},
 	}
 
